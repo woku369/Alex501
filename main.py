@@ -247,6 +247,9 @@ class Alex501App:
         btn_save_calib = ttk.Button(tab_calib, text="Kalibrierkurve speichern", command=self.save_calib_curve)
         btn_save_calib.pack(pady=(0, 10))
 
+        # Zuletzt automatisch gespeicherte Kalibrierkurve beim Start laden
+        self.load_calib_curve()
+
     def add_calib_point(self):
         try:
             ref = float(self.calib_ref.get().replace(',', '.'))
@@ -254,6 +257,7 @@ class Alex501App:
             self.calib_data.append((ref, meas))
             self.calib_tree.insert("", "end", values=(ref, meas))
             self.update_calib_plot()
+            self.autosave_calib_curve()
             self.calib_ref.set("")
             self.calib_meas.set("")
         except ValueError:
@@ -352,15 +356,6 @@ class Alex501App:
             except ValueError:
                 pass
             
-            # Kalibrierkurve auf gemessenen Alkoholwert anwenden (falls vorhanden)
-            if measured_alc is not None:
-                use_curve = getattr(self, 'use_calib_curve', None)
-                has_curve = hasattr(self, 'calib_data') and isinstance(self.calib_data, list) and len(self.calib_data) >= 2
-                if use_curve and use_curve.get() and has_curve:
-                    refs, meas = zip(*self.calib_data)
-                    coeffs = np.polyfit(meas, refs, 1)
-                    measured_alc = float(np.polyval(coeffs, measured_alc))
-
             # Temperaturkorrektur und Verdünnung nur wenn Werte vorhanden
             probe_vol = None
             water_vol = None
@@ -436,6 +431,15 @@ class Alex501App:
                     if actual_alcohol_percent > 50:
                         contraction_correction = 1 + (0.001 * (actual_alcohol_percent - 50))
                         actual_alcohol_percent *= contraction_correction
+
+                    # Kalibrierkurve auf den berechneten (tatsächlichen) Alkoholgehalt anwenden,
+                    # nicht auf den gemessenen Wert der verdünnten Probe (siehe Berechnungslogik_Alex501.txt, Punkt 5)
+                    use_curve = getattr(self, 'use_calib_curve', None)
+                    has_curve = hasattr(self, 'calib_data') and isinstance(self.calib_data, list) and len(self.calib_data) >= 2
+                    if use_curve and use_curve.get() and has_curve:
+                        refs, meas = zip(*self.calib_data)
+                        coeffs = np.polyfit(meas, refs, 1)
+                        actual_alcohol_percent = float(np.polyval(coeffs, actual_alcohol_percent))
                 
                 # Dichte berechnen (falls Alkohol und Dichte vorhanden)
                 if measured_alc is not None and measured_dens is not None and actual_alcohol_percent is not None:
