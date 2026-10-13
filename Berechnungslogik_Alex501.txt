@@ -1,0 +1,49 @@
+# Berechnungslogik Alex501 Mazerat-Interpolation
+
+## 1. Verdünnungsfaktor
+- **Formel:**
+  Verdünnungsfaktor = (Probevolumen + Wasservolumen) / Probevolumen
+
+## 2. Tatsächlicher Alkoholgehalt der Originalprobe
+- **Schritt 1:** Alkoholmenge in der verdünnten Probe
+  Alkohol_in_Verdünnung = (Gemessener Alkoholgehalt / 100) * (Probevolumen + Wasservolumen)
+
+- **Schritt 2:** Rückrechnung auf Originalprobe
+  Tatsächlicher_Alkoholgehalt = (Alkohol_in_Verdünnung / Probevolumen) * 100
+
+- **Schritt 3:** Volumenkontraktion (nur bei >50 %vol)
+  Falls Tatsächlicher_Alkoholgehalt > 50:
+    Korrektur = 1 + 0,001 * (Tatsächlicher_Alkoholgehalt - 50)
+    Tatsächlicher_Alkoholgehalt *= Korrektur
+
+- **Schritt 4:** Optional Kalibrierkurve
+  Falls aktiviert:
+    Tatsächlicher_Alkoholgehalt = Kalibrierfunktion(Tatsächlicher_Alkoholgehalt)
+
+## 3. Tatsächliche Dichte
+- **Schritt 1:** Erwartete Dichte der verdünnten Probe (OIML R 22 Tabelle)
+  Dichte_erwartet_verdünnt = Interpolation(Gemessener Alkoholgehalt)
+
+- **Schritt 2:** Erwartete Dichte der Originalprobe
+  Dichte_erwartet_original = Interpolation(Tatsächlicher_Alkoholgehalt)
+
+- **Schritt 3:** Korrektur um Differenz
+  Dichte_Differenz = Gemessene Dichte - Dichte_erwartet_verdünnt
+  Tatsächliche_Dichte = Dichte_erwartet_original + Dichte_Differenz * (Verdünnungsfaktor)
+
+## 4. Tatsächlicher Extraktgehalt
+- **Formel:**
+  Tatsächlicher_Extrakt = Gemessener Extrakt * Verdünnungsfaktor
+
+## 5. Kalibrierkurve
+- **Verwendung:**
+  Die Kalibrierkurve ist eine lineare Regression zwischen Messwerten und Referenzwerten.
+  Sie wird nur auf den berechneten Alkoholgehalt angewendet, nicht auf die gemessenen Werte.
+
+## 6. Spindelvergleich
+- **Abweichung:**
+  Abweichung = Tatsächlicher_Alkoholgehalt - Spindelwert
+  Abweichung_% = (Abweichung / Spindelwert) * 100
+
+---
+Alle Formeln und Schritte sind im Quellcode dokumentiert und werden in der App automatisch ausgeführt.

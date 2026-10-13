@@ -1,0 +1,54 @@
+# Roadmap: Alex501 Mazerat-Interpolation
+
+## Version 1.0 (aktuell)
+- Interpolation & Analyse verdünnter Proben
+- Kalibrierkurve (linear)
+- Messdatenbank (SQLite)
+- Messhistorie & Export
+- Info- und Berechnungslogik-Tab
+
+---
+
+## Version 1.1
+- Erweiterte Kalibrierung (polynomisch, spline)
+- Mehrere Kalibrierprofile
+- Verbesserte Fehler- und Hinweisdialoge
+- Export/Import von Messdaten (CSV, Excel)
+
+## Version 1.2
+- Direkte Geräteschnittstelle (RS232, USB, TCP/IP)
+  - Automatisches Einlesen der Messwerte
+  - Live-Übernahme und Protokollierung
+- Gerätekonfiguration im Einstellungsmenü
+
+## Version 1.3
+- Erweiterte Datenbankfunktionen
+  - Filter- und Suchfunktionen
+  - Serien- und Chargenverwaltung
+  - PDF-Report mit Grafiken und Ergebnissen
+
+## Version 1.4
+- Grafische Auswertungen
+  - Trendanalysen, Diagramme, Vergleichsplots
+  - Visualisierung der Kalibrierkurven
+
+## Version 1.5
+- Benutzerverwaltung und Rechte
+  - Mehrere Nutzer, Passwortschutz, Rollen
+
+## Version 1.6
+- Cloud-Backup oder Netzwerk-Synchronisation
+  - Automatische Sicherung der Messdaten
+  - Synchronisation zwischen mehreren Rechnern
+
+---
+
+## Weitere Ideen
+- Temperaturkorrektur für alle Werte
+- Automatische Updates
+- Erweiterung für andere Messgeräte
+- API für externe Anwendungen
+
+---
+
+**Hinweis:** Die Roadmap ist flexibel und kann nach Bedarf angepasst werden. Feature-Wünsche bitte direkt melden!
