@@ -303,7 +303,16 @@ class Alex501App:
         with tempfile.NamedTemporaryFile(delete=False, suffix='.txt', mode='w', encoding='utf-8') as tmp:
             tmp.write(self.result_text.get('1.0', tk.END))
             tmp_path = tmp.name
-        # Hier ggf. Druckfunktionalität einfügen
+        try:
+            if platform.system() == "Windows":
+                # Nutzt den "print"-Shell-Verb und damit den Standarddrucker des Systems
+                os.startfile(tmp_path, "print")
+            else:
+                messagebox.showwarning("Warnung",
+                    "Direktes Drucken wird auf diesem Betriebssystem nicht unterstützt.\n"
+                    f"Die Ergebnisse wurden hier gespeichert:\n{tmp_path}")
+        except OSError as e:
+            messagebox.showerror("Fehler", f"Drucken fehlgeschlagen: {str(e)}\nDatei: {tmp_path}")
 
     def calculate_results(self):
         try:
