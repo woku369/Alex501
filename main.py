@@ -13,6 +13,8 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import os
 import sqlite3
+import shutil
+import glob
 
 # Deutsche Zahlenformatierung
 def format_de(value, decimals=2):
@@ -826,9 +828,32 @@ Eingabewerte:
 
 
 class MeasurementDB:
+    MAX_BACKUPS = 20  # Anzahl der aufbewahrten Backup-Kopien
+
     def __init__(self, db_path="messungen.db"):
         self.db_path = db_path
         self._init_db()
+        self._backup_db()
+
+    def _backup_db(self):
+        """Legt bei jedem Programmstart eine zeitgestempelte Sicherungskopie der
+        Datenbank an und behaelt nur die letzten MAX_BACKUPS Kopien."""
+        if not os.path.exists(self.db_path):
+            return
+        try:
+            backup_dir = os.path.join(os.path.dirname(os.path.abspath(self.db_path)), "backups")
+            os.makedirs(backup_dir, exist_ok=True)
+            db_name = os.path.splitext(os.path.basename(self.db_path))[0]
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            backup_path = os.path.join(backup_dir, f"{db_name}_backup_{timestamp}.db")
+            shutil.copy2(self.db_path, backup_path)
+
+            # Alte Backups ueber dem Limit entfernen (aelteste zuerst)
+            existing_backups = sorted(glob.glob(os.path.join(backup_dir, f"{db_name}_backup_*.db")))
+            for old_backup in existing_backups[:-self.MAX_BACKUPS]:
+                os.remove(old_backup)
+        except OSError as e:
+            print(f"Warnung: Backup der Datenbank konnte nicht erstellt werden: {e}")
 
     def _init_db(self):
         with sqlite3.connect(self.db_path) as conn:
