@@ -610,6 +610,7 @@ Eingabewerte:
                 'sample_name': sample_name,
                 'batch': batch,
                 'input': {
+                    'room_temp': room_temp,
                     'probe_volume': probe_vol,
                     'water_volume': water_vol,
                     'measured_alcohol': measured_alc_original,
@@ -762,58 +763,62 @@ Eingabewerte:
     def show_measurement_history(self):
         hist_win = tk.Toplevel(self.root)
         hist_win.title("Messhistorie")
-        hist_win.geometry("1200x500")
-        columns = ("id", "timestamp", "sample_name", "batch", "measured_alcohol", "measured_density", "measured_extract", "spindle_alcohol", "dilution_factor", "actual_alcohol", "actual_density", "actual_extract")
+        hist_win.geometry("1500x500")
+        columns = ("id", "timestamp", "sample_name", "batch", "room_temp", "measured_alcohol", "measured_density",
+                   "measured_extract", "spindle_alcohol", "spindle_density_at_temp", "spindle_density_20C",
+                   "dilution_factor", "calibration_applied", "actual_alcohol", "actual_density", "actual_extract")
         tree = ttk.Treeview(hist_win, columns=columns, show="headings")
         tree.heading("id", text="ID")
         tree.heading("timestamp", text="Zeitstempel")
         tree.heading("sample_name", text="Probe")
         tree.heading("batch", text="Charge")
+        tree.heading("room_temp", text="Raumtemp. [°C]")
         tree.heading("measured_alcohol", text="Messwert %vol.")
         tree.heading("measured_density", text="Messwert Dichte")
         tree.heading("measured_extract", text="Messwert Extrakt")
-        tree.heading("spindle_alcohol", text="Spindelwert")
+        tree.heading("spindle_alcohol", text="Spindelwert Alkohol")
+        tree.heading("spindle_density_at_temp", text="Spindeldichte (Temp)")
+        tree.heading("spindle_density_20C", text="Spindeldichte (20°C)")
         tree.heading("dilution_factor", text="Verdünnungsfaktor")
+        tree.heading("calibration_applied", text="Kalibrierkurve")
         tree.heading("actual_alcohol", text="berechnet %vol.")
         tree.heading("actual_density", text="berechnet Dichte")
         tree.heading("actual_extract", text="berechnet Extrakt")
         tree.column("id", width=40)
-        tree.column("timestamp", width=160)
-        tree.column("sample_name", width=120)
-        tree.column("batch", width=80)
+        tree.column("timestamp", width=140)
+        tree.column("sample_name", width=110)
+        tree.column("batch", width=70)
+        tree.column("room_temp", width=90)
         tree.column("measured_alcohol", width=100)
         tree.column("measured_density", width=100)
         tree.column("measured_extract", width=100)
-        tree.column("spindle_alcohol", width=100)
+        tree.column("spindle_alcohol", width=110)
+        tree.column("spindle_density_at_temp", width=110)
+        tree.column("spindle_density_20C", width=110)
         tree.column("dilution_factor", width=100)
-        tree.column("actual_alcohol", width=120)
-        tree.column("actual_density", width=120)
-        tree.column("actual_extract", width=120)
+        tree.column("calibration_applied", width=90)
+        tree.column("actual_alcohol", width=110)
+        tree.column("actual_density", width=110)
+        tree.column("actual_extract", width=110)
         tree.pack(fill="both", expand=True)
         # Daten aus DB laden
         import sqlite3
         with sqlite3.connect(self.measurement_db.db_path) as conn:
             c = conn.cursor()
-            c.execute("SELECT id, timestamp, sample_name, batch, measured_alcohol, measured_density, measured_extract, spindle_alcohol, dilution_factor, actual_alcohol, actual_density, actual_extract FROM messungen ORDER BY id DESC")
+            c.execute("""SELECT id, timestamp, sample_name, batch, room_temp, measured_alcohol, measured_density,
+                                measured_extract, spindle_alcohol, spindle_density_at_temp, spindle_density_20C,
+                                dilution_factor, calibration_applied, actual_alcohol, actual_density, actual_extract
+                         FROM messungen ORDER BY id DESC""")
+            # Spalten (ab Index 4), die als Gleitkommazahl mit fester Nachkommastellenzahl formatiert werden
+            float_columns = {4: 1, 5: 2, 6: 4, 7: 2, 8: 2, 9: 4, 10: 4, 11: 2, 13: 2, 14: 4, 15: 2}
             for row in c.fetchall():
-                # Formatierung
                 row = list(row)
-                if row[4] is not None:
-                    row[4] = f"{row[4]:.2f}"
-                if row[5] is not None:
-                    row[5] = f"{row[5]:.4f}"
-                if row[6] is not None:
-                    row[6] = f"{row[6]:.2f}"
-                if row[7] is not None:
-                    row[7] = f"{row[7]:.2f}"
-                if row[8] is not None:
-                    row[8] = f"{row[8]:.2f}"
-                if row[9] is not None:
-                    row[9] = f"{row[9]:.2f}"
-                if row[10] is not None:
-                    row[10] = f"{row[10]:.4f}"
-                if row[11] is not None:
-                    row[11] = f"{row[11]:.2f}"
+                for idx, decimals in float_columns.items():
+                    if row[idx] is not None:
+                        row[idx] = f"{row[idx]:.{decimals}f}"
+                # calibration_applied (Index 12) ist als 0/1/NULL gespeichert
+                if row[12] is not None:
+                    row[12] = "Ja" if row[12] else "Nein"
                 tree.insert("", "end", values=row)
         # Button zum Schließen
         btn_close = ttk.Button(hist_win, text="Schließen", command=hist_win.destroy)
@@ -834,6 +839,7 @@ class MeasurementDB:
                     timestamp TEXT,
                     sample_name TEXT,
                     batch TEXT,
+                    room_temp REAL,
                     probe_volume REAL,
                     water_volume REAL,
                     measured_alcohol REAL,
@@ -841,24 +847,49 @@ class MeasurementDB:
                     measured_extract REAL,
                     dilution_factor REAL,
                     spindle_alcohol REAL,
+                    spindle_density_at_temp REAL,
+                    spindle_density_20C REAL,
+                    calibration_applied INTEGER,
                     actual_alcohol REAL,
                     actual_density REAL,
                     actual_extract REAL
                 )
             ''')
             conn.commit()
+            self._migrate_schema(conn)
+
+    def _migrate_schema(self, conn):
+        """Ergaenzt bei einer bereits bestehenden Datenbank (aus einer aelteren
+        Version vor der Schema-Erweiterung) die fehlenden Spalten nachtraeglich."""
+        c = conn.cursor()
+        c.execute("PRAGMA table_info(messungen)")
+        existing_columns = {row[1] for row in c.fetchall()}
+        new_columns = {
+            'room_temp': 'REAL',
+            'spindle_density_at_temp': 'REAL',
+            'spindle_density_20C': 'REAL',
+            'calibration_applied': 'INTEGER'
+        }
+        for column, col_type in new_columns.items():
+            if column not in existing_columns:
+                c.execute(f"ALTER TABLE messungen ADD COLUMN {column} {col_type}")
+        conn.commit()
 
     def insert_measurement(self, data):
         with sqlite3.connect(self.db_path) as conn:
             c = conn.cursor()
             c.execute('''
                 INSERT INTO messungen (
-                    timestamp, sample_name, batch, probe_volume, water_volume, measured_alcohol, measured_density, measured_extract, dilution_factor, spindle_alcohol, actual_alcohol, actual_density, actual_extract
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    timestamp, sample_name, batch, room_temp, probe_volume, water_volume,
+                    measured_alcohol, measured_density, measured_extract, dilution_factor,
+                    spindle_alcohol, spindle_density_at_temp, spindle_density_20C, calibration_applied,
+                    actual_alcohol, actual_density, actual_extract
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 data['timestamp'],
                 data['sample_name'],
                 data['batch'],
+                data['input']['room_temp'],
                 data['input']['probe_volume'],
                 data['input']['water_volume'],
                 data['input']['measured_alcohol'],
@@ -866,6 +897,9 @@ class MeasurementDB:
                 data['input']['measured_extract'],
                 data['input']['dilution_factor'],
                 data['input']['spindle_alcohol'],
+                data['input']['spindle_density_at_temp'],
+                data['input']['spindle_density_20C'],
+                int(bool(data['input']['calibration_applied'])),
                 data['output']['actual_alcohol'],
                 data['output']['actual_density'],
                 data['output']['actual_extract']
