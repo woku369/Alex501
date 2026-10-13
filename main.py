@@ -321,12 +321,23 @@ class Alex501App:
             sample_name = self.sample_name.get().strip()
             batch = self.batch_field.get().strip()
             
+            ignored_fields = []  # Felder mit ungueltiger Eingabe, die ignoriert wurden
+            range_warnings = []  # Felder mit physikalisch unplausiblem Wert (werden trotzdem verwendet)
+
+            def check_range(value, lo, hi, label, inclusive_lo=True):
+                if value is None:
+                    return
+                below = value < lo if inclusive_lo else value <= lo
+                if below or value > hi:
+                    range_warnings.append(f"{label} ({value:g}) liegt außerhalb des erwarteten Bereichs {lo}–{hi}")
+
             # Raumtemperatur ist Pflicht
             try:
                 room_temp = float(self.room_temp.get().replace(',', '.'))
             except ValueError:
                 messagebox.showerror("Fehler", "Raumtemperatur ist erforderlich!")
                 return
+            check_range(room_temp, 0, 40, "Raumtemperatur [°C]")
             
             # Alle anderen Felder optional einlesen
             probe_vol_raw = None
@@ -335,17 +346,18 @@ class Alex501App:
             measured_alc_original = None
             measured_dens = None
             measured_ext = None
-            ignored_fields = []  # Felder mit ungueltiger Eingabe, die ignoriert wurden
             
             try:
                 if self.probe_volume.get().strip():
                     probe_vol_raw = float(self.probe_volume.get().replace(',', '.'))
+                    check_range(probe_vol_raw, 0, 10000, "Probevolumen [ml]", inclusive_lo=False)
             except ValueError:
                 ignored_fields.append("Probevolumen")
             
             try:
                 if self.water_value.get().strip():
                     water_val = float(self.water_value.get().replace(',', '.'))
+                    check_range(water_val, 0, 10000, "Wasserzugabe", inclusive_lo=False)
             except ValueError:
                 ignored_fields.append("Wasserzugabe")
             
@@ -353,18 +365,23 @@ class Alex501App:
                 if self.measured_alcohol.get().strip():
                     measured_alc = float(self.measured_alcohol.get().replace(',', '.'))
                     measured_alc_original = measured_alc
+                    check_range(measured_alc, 0, 100, "Gemessener Alkohol [%vol]")
             except ValueError:
                 ignored_fields.append("Gemessener Alkohol")
             
             try:
                 if self.measured_density.get().strip():
                     measured_dens = float(self.measured_density.get().replace(',', '.'))
+                    # Bereich deckt sowohl reine Ethanol-Wasser-Proben als auch
+                    # zuckerhaltige Likoere ab, deren Dichte bis ca. 1,35 g/cm³ reichen kann
+                    check_range(measured_dens, 0.70, 1.40, "Gemessene Dichte [g/cm³]")
             except ValueError:
                 ignored_fields.append("Gemessene Dichte")
             
             try:
                 if self.measured_extract.get().strip():
                     measured_ext = float(self.measured_extract.get().replace(',', '.'))
+                    check_range(measured_ext, 0, 100, "Gemessener Extrakt [g/100ml]")
             except ValueError:
                 ignored_fields.append("Gemessener Extrakt")
             
@@ -390,6 +407,7 @@ class Alex501App:
             if spindle_text:
                 try:
                     spindle_alc = float(spindle_text.replace(',', '.'))
+                    check_range(spindle_alc, 0, 100, "Spindelwert Alkohol [%vol]")
                 except ValueError:
                     ignored_fields.append("Spindelwert Alkohol")
 
@@ -408,14 +426,26 @@ class Alex501App:
                             "Bitte 'Gespindelter Alkohol' eingeben.")
                         return
                     spindle_dens_20C = self.correct_density_to_20C(spindle_dens_at_temp, room_temp, spindle_alc)
+                    # Bereich deckt sowohl reine Ethanol-Wasser-Proben als auch
+                    # zuckerhaltige Likoere ab, deren Dichte bis ca. 1,35 g/cm³ reichen kann
+                    check_range(spindle_dens_at_temp, 0.70, 1.40, "Spindelwert Dichte [g/cm³]")
                 except ValueError:
                     ignored_fields.append("Spindelwert Dichte")
 
-            # Hinweis anzeigen, falls Eingaben ungueltig waren und ignoriert wurden
-            if ignored_fields:
-                messagebox.showwarning("Hinweis",
-                    "Folgende Eingaben waren ungültig (keine Zahl) und wurden ignoriert:\n- "
-                    + "\n- ".join(ignored_fields))
+            # Hinweis anzeigen, falls Eingaben ungueltig waren und ignoriert wurden oder
+            # physikalisch unplausible Werte erkannt wurden (letztere werden trotzdem verwendet)
+            if ignored_fields or range_warnings:
+                message = ""
+                if ignored_fields:
+                    message += ("Folgende Eingaben waren ungültig (keine Zahl) und wurden ignoriert:\n- "
+                                + "\n- ".join(ignored_fields))
+                if range_warnings:
+                    if message:
+                        message += "\n\n"
+                    message += ("Folgende Eingaben liegen außerhalb des erwarteten Wertebereichs "
+                                "(werden aber trotzdem verwendet, bitte prüfen):\n- "
+                                + "\n- ".join(range_warnings))
+                messagebox.showwarning("Hinweis", message)
 
             # Prüfe, ob mindestens eine sinnvolle Berechnung möglich ist
             can_calculate_dilution = (probe_vol is not None and water_vol is not None and 
