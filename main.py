@@ -324,37 +324,38 @@ class Alex501App:
             measured_alc_original = None
             measured_dens = None
             measured_ext = None
+            ignored_fields = []  # Felder mit ungueltiger Eingabe, die ignoriert wurden
             
             try:
                 if self.probe_volume.get().strip():
                     probe_vol_raw = float(self.probe_volume.get().replace(',', '.'))
             except ValueError:
-                pass
+                ignored_fields.append("Probevolumen")
             
             try:
                 if self.water_value.get().strip():
                     water_val = float(self.water_value.get().replace(',', '.'))
             except ValueError:
-                pass
+                ignored_fields.append("Wasserzugabe")
             
             try:
                 if self.measured_alcohol.get().strip():
                     measured_alc = float(self.measured_alcohol.get().replace(',', '.'))
                     measured_alc_original = measured_alc
             except ValueError:
-                pass
+                ignored_fields.append("Gemessener Alkohol")
             
             try:
                 if self.measured_density.get().strip():
                     measured_dens = float(self.measured_density.get().replace(',', '.'))
             except ValueError:
-                pass
+                ignored_fields.append("Gemessene Dichte")
             
             try:
                 if self.measured_extract.get().strip():
                     measured_ext = float(self.measured_extract.get().replace(',', '.'))
             except ValueError:
-                pass
+                ignored_fields.append("Gemessener Extrakt")
             
             # Temperaturkorrektur und Verdünnung nur wenn Werte vorhanden
             probe_vol = None
@@ -376,7 +377,10 @@ class Alex501App:
             spindle_alc = None
             spindle_text = self.spindle_alcohol.get().strip()
             if spindle_text:
-                spindle_alc = float(spindle_text.replace(',', '.'))
+                try:
+                    spindle_alc = float(spindle_text.replace(',', '.'))
+                except ValueError:
+                    ignored_fields.append("Spindelwert Alkohol")
 
             # Optional: Gespindelte Dichte (gemessen bei Raumtemperatur)
             spindle_dens_at_temp = None
@@ -394,7 +398,13 @@ class Alex501App:
                         return
                     spindle_dens_20C = self.correct_density_to_20C(spindle_dens_at_temp, room_temp, spindle_alc)
                 except ValueError:
-                    pass
+                    ignored_fields.append("Spindelwert Dichte")
+
+            # Hinweis anzeigen, falls Eingaben ungueltig waren und ignoriert wurden
+            if ignored_fields:
+                messagebox.showwarning("Hinweis",
+                    "Folgende Eingaben waren ungültig (keine Zahl) und wurden ignoriert:\n- "
+                    + "\n- ".join(ignored_fields))
 
             # Prüfe, ob mindestens eine sinnvolle Berechnung möglich ist
             can_calculate_dilution = (probe_vol is not None and water_vol is not None and 
