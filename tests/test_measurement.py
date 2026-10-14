@@ -102,6 +102,20 @@ class TestInputValidation(unittest.TestCase):
         self.assertFalse(result["ok"])
         self.assertIn("100 %vol", result["messages"][-1][1])
 
+    def test_zero_probe_volume_is_error_not_a_crash(self):
+        result = run(probe_volume="0")
+        self.assertFalse(result["ok"])
+        self.assertIn("Probevolumen", result["messages"][-1][1])
+
+    def test_negative_water_is_error(self):
+        result = run(water_value="-1")
+        self.assertFalse(result["ok"])
+
+    def test_water_zero_is_allowed(self):
+        result = run(water_value="0")
+        self.assertTrue(result["ok"])
+        self.assertAlmostEqual(result["output"]["actual_alcohol"], 40.0, places=6)
+
     def test_small_diluted_volume_gives_info(self):
         result = run(probe_volume="10", water_value="10")
         self.assertIn(m.LEVEL_INFO, levels(result))

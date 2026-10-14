@@ -114,6 +114,11 @@ def evaluate_measurement(raw, calib_data=None, use_calibration=False, now=None):
 
     water_mode = raw.get("water_mode") or WATER_BY_VOLUME
 
+    if diluted and probe_input is not None and probe_input <= 0:
+        return fail("Das Probevolumen muss größer als 0 sein.")
+    if diluted and water_input is not None and water_input < 0:
+        return fail("Die Wasserzugabe darf nicht negativ sein.")
+
     # Volumina auf 20 °C bringen (nur im Verdünnungsmodus)
     probe_vol = None
     water_vol = None
