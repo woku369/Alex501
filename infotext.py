@@ -15,7 +15,8 @@ INFO_SECTIONS = [
     ("Ablauf", [
         "1. Verdünnung ansetzen: Probe nach Volumen (Messkolben), Wasser nach Gewicht. Auf etwa 40 %vol "
         "verdünnen, damit keine Trübung (Louche-Effekt) entsteht. Für eine Messung werden mindestens 40 ml "
-        "verdünnte Probe benötigt. Der Verdünnungsplaner schlägt Probe- und Wassermenge vor.",
+        "verdünnte Probe benötigt. Vorgesehen sind 100 ml Probe im Messkolben und Wasser nach Gewicht; der "
+        "Verdünnungsplaner nennt die dazu nötige Wassermenge und wie viele Messungen die Verdünnung ergibt.",
         "2. Verdünnte Probe am Alex 501 messen: Alkohol, Dichte, Extrakt.",
         "3. Werte, Raumtemperatur und die tatsächlich angesetzten Mengen eingeben, 'Berechnen' klicken.",
         "4. Proben unter 47 %vol (z. B. Fertigprodukte) werden direkt gemessen: Modus 'Direkt gemessen', "
@@ -39,8 +40,10 @@ INFO_SECTIONS = [
         "Ordnung).",
         "6. Kalibrierkurve (optional): lineare Regression Messwert -> Referenzwert, angewendet auf den berechneten "
         "Alkoholgehalt.",
-        "7. Spindelvergleich: Abweichung = berechneter Alkohol - Spindelwert. Die Spindeldichte wird mit der "
-        "berechneten Dichte der Originalprobe verglichen. Laborwerte werden analog verglichen.",
+        "7. Spindelvergleich: Abweichung = berechneter Alkohol - Spindelwert. Die Messgrenzen sind die Summe aus "
+        "Spindelgenauigkeit (±0,3 %vol) und Gerätegenauigkeit des Alex 501 (±0,4 %vol) mal Verstärkung durch die "
+        "Verdünnung. Die Spindeldichte wird mit der berechneten Dichte der Originalprobe verglichen. Laborwerte "
+        "werden analog verglichen.",
     ]),
     ("Datengrundlage", [
         "Dichte-Tabelle: Canadian Alcoholometric Laboratory Table 1996 (Canada Revenue Agency), berechnet aus der "
@@ -52,8 +55,9 @@ INFO_SECTIONS = [
         "Extrakt nimmt Volumen ein; der berechnete Alkoholgehalt fällt dadurch tendenziell zu hoch aus. Eine "
         "Modellrechnung (Annahme: Extrakt wie Zucker, nicht an echten Mazeraten geprüft) ergab etwa +0,23 %vol "
         "je 1 g/100 ml Extrakt. Bis belegte Werte vorliegen, wird nicht korrigiert.",
-        "Geräteungenauigkeit: Die Unsicherheit des Alex 501 (±0,4 %vol bei 40 %vol) wird durch die Verdünnung "
-        "verstärkt: etwa Faktor 1,2 bei Mazeraten, etwa Faktor 1,9 bei Destillaten.",
+        "Geräteungenauigkeit: Die Genauigkeit des Alex 501 (±0,4 %vol bei 40 %vol, für alle Messwerte so "
+        "angesetzt) wird durch die Verdünnung verstärkt: etwa Faktor 1,2 bei Mazeraten, etwa Faktor 1,9 bei "
+        "Destillaten. Messkolben (100 ml), Waage und Raumtemperatur (±0,1 K) tragen dagegen weniger als 0,1 %vol bei.",
         "Kalibrierkurve: Sie wird auf den berechneten Alkoholgehalt der Originalprobe angewendet, auch wenn "
         "dieser über dem Bereich der Kalibrierpunkte liegt.",
     ]),

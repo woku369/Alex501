@@ -20,6 +20,11 @@ WATER_BY_MASS = "mass"
 DEVICE_MAX_ALCOHOL = 47.0   # %vol, Messbereich des Alex 501 (Angabe des Nutzers)
 MIN_MEASURING_VOLUME = 40.0  # ml verdünnte Probe je Messung (Angabe des Nutzers)
 
+# Genauigkeit des Alex 501 (±%vol bei 40 %vol) und der Spindelung (±%vol, schon auf 20 °C korrigiert),
+# beides Angaben des Nutzers. Die Gerätegrenze wird für alle Messwerte als gleich angenommen.
+DEVICE_ALCOHOL_TOLERANCE = 0.4
+SPINDLE_ALCOHOL_TOLERANCE = 0.3
+
 LEVEL_ERROR = "error"      # Berechnung nicht möglich
 LEVEL_WARNING = "warning"  # Berechnung läuft, Wert bitte prüfen
 LEVEL_INFO = "info"
@@ -37,6 +42,19 @@ def _signed(value, decimals):
     """Zahl mit Vorzeichen im deutschen Format (immer + oder -)."""
     text = format_de(abs(value), decimals)
     return ("+" if value > 0 else "-") + text
+
+
+def amplification_factor(measured_alc, probe_vol, water_vol):
+    """Wie stark sich ein Fehler des gemessenen Alkohols der Verdünnung auf den berechneten Alkohol der
+    Originalprobe auswirkt (numerische Ableitung der Massenbilanz). None, wenn nicht berechenbar."""
+    step = 0.2
+    low = max(measured_alc - step, 0.0)
+    high = measured_alc + step
+    try:
+        return (calc.compute_actual_alcohol(high, probe_vol, water_vol)
+                - calc.compute_actual_alcohol(low, probe_vol, water_vol)) / (high - low)
+    except ValueError:
+        return None
 
 
 def evaluate_measurement(raw, calib_data=None, use_calibration=False, now=None):
@@ -169,6 +187,7 @@ def evaluate_measurement(raw, calib_data=None, use_calibration=False, now=None):
     actual_alc = None
     actual_dens = None
     actual_ext = None
+    amplification = None
     dilution_factor = None
     effective_factor = None
     expected_density_original = None
@@ -183,6 +202,7 @@ def evaluate_measurement(raw, calib_data=None, use_calibration=False, now=None):
             except ValueError as error:
                 return fail(str(error))
             effective_factor = calc.compute_effective_dilution_factor(measured_alc, probe_vol, water_vol)
+            amplification = amplification_factor(measured_alc, probe_vol, water_vol)
             # Kalibrierkurve auf den berechneten Alkoholgehalt (siehe Berechnungslogik_Alex501.txt, Punkt 5)
             if use_curve:
                 actual_alc = calc.apply_calibration_curve(calib_data, actual_alc)
@@ -198,6 +218,7 @@ def evaluate_measurement(raw, calib_data=None, use_calibration=False, now=None):
     elif can_calculate:
         # Direkte Messung: Werte werden unverändert übernommen (nur optional kalibriert)
         actual_alc = measured_alc
+        amplification = 1.0 if measured_alc is not None else None
         if actual_alc is not None and use_curve:
             actual_alc = calc.apply_calibration_curve(calib_data, actual_alc)
         actual_dens = measured_dens
@@ -215,6 +236,14 @@ def evaluate_measurement(raw, calib_data=None, use_calibration=False, now=None):
             "deviation": deviation,
             "deviation_percent": (deviation / spindle_alc * 100) if spindle_alc > 0 else 0,
         }
+        if amplification is not None:
+            limit = SPINDLE_ALCOHOL_TOLERANCE + DEVICE_ALCOHOL_TOLERANCE * amplification
+            comparison["alcohol"].update({
+                "limit": limit,
+                "within_limit": abs(deviation) <= limit,
+                "spindle_tolerance": SPINDLE_ALCOHOL_TOLERANCE,
+                "alex_tolerance": DEVICE_ALCOHOL_TOLERANCE * amplification,
+            })
     if spindle_dens_at_temp is not None and spindle_dens_20c is not None:
         density_comparison = {"spindle_value_at_temp": spindle_dens_at_temp, "spindle_value_20C": spindle_dens_20c}
         if actual_dens is not None:
@@ -267,6 +296,8 @@ def evaluate_measurement(raw, calib_data=None, use_calibration=False, now=None):
             "actual_density": actual_dens,
             "actual_extract": actual_ext,
             "effective_dilution_factor": effective_factor,
+            "amplification": amplification,
+            "alcohol_tolerance": None if amplification is None else DEVICE_ALCOHOL_TOLERANCE * amplification,
         },
         "derived": {"expected_density_original": expected_density_original},
         "comparison": comparison,
@@ -309,7 +340,9 @@ def format_report(result):
         parts += ["", line, "",
                   "Berechnete tatsächliche Werte der Originalprobe:" if diluted else "Werte der Probe (direkt gemessen):", ""]
         if out["actual_alcohol"] is not None:
-            parts.append(f"  Alkoholgehalt: {format_de(out['actual_alcohol'], 2)} %vol.")
+            tolerance = out["alcohol_tolerance"]
+            parts.append(f"  Alkoholgehalt: {format_de(out['actual_alcohol'], 2)} %vol."
+                         + (f" (Gerätegrenze ±{format_de(tolerance, 2)})" if tolerance is not None else ""))
         if out["actual_density"] is not None:
             parts.append(f"  Dichte: {format_de(out['actual_density'], 5)} g/cm³")
         if out["actual_extract"] is not None:
@@ -321,6 +354,10 @@ def format_report(result):
                   f"  Gespindelter Wert:        {format_de(c['spindle_value'], 2)} %vol.",
                   f"  Alex 501 (berechnet):     {format_de(c['alex501_value'], 2)} %vol.", "",
                   f"  Abweichung:               {_signed(c['deviation'], 2)} %vol. ({_signed(c['deviation_percent'], 1)}%)"]
+        if "limit" in c:
+            parts += [f"  Messgrenzen:              ±{format_de(c['limit'], 2)} %vol (Spindel ±{format_de(c['spindle_tolerance'], 2)} "
+                      f"+ Alex ±{format_de(c['alex_tolerance'], 2)}): Abweichung "
+                      + ("innerhalb" if c["within_limit"] else "außerhalb") + " der Grenzen"]
     if "density" in comparison:
         c = comparison["density"]
         temp = format_de(inp["room_temp"], 1)

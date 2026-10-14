@@ -33,32 +33,45 @@ def levels(result):
 
 
 class TestPlanDilution(unittest.TestCase):
-    def test_roundtrip_hits_target_alcohol_and_volume(self):
+    def test_roundtrip_hits_target_alcohol_and_reported_volume(self):
         for probe_alc in (50, 53, 78, 80):
-            plan = calc.plan_dilution(probe_alc, 45.0, 40.0)
-            actual = calc.compute_actual_alcohol(40.0, plan["probe_volume"], plan["water_volume"])
-            self.assertAlmostEqual(actual, probe_alc, places=4)
-            real_volume = calc.compute_effective_dilution_factor(40.0, plan["probe_volume"], plan["water_volume"]) \
-                * plan["probe_volume"]
-            self.assertAlmostEqual(real_volume, 45.0, places=4)
+            for probe_volume in (25.0, 100.0):
+                plan = calc.plan_dilution(probe_alc, probe_volume, 40.0)
+                actual = calc.compute_actual_alcohol(40.0, probe_volume, plan["water_volume"])
+                self.assertAlmostEqual(actual, probe_alc, places=4)
+                real_volume = calc.compute_effective_dilution_factor(40.0, probe_volume, plan["water_volume"]) \
+                    * probe_volume
+                self.assertAlmostEqual(real_volume, plan["total_volume"], places=4)
+
+    def test_known_amounts_for_100_ml_probe(self):
+        mazerat = calc.plan_dilution(50, 100.0, 40.0)
+        self.assertAlmostEqual(mazerat["water_mass"], 25.5, delta=0.2)
+        self.assertAlmostEqual(mazerat["total_volume"], 125.0, delta=0.5)
+        destillat = calc.plan_dilution(78, 100.0, 40.0)
+        self.assertAlmostEqual(destillat["water_mass"], 98.4, delta=0.3)
+        self.assertAlmostEqual(destillat["total_volume"], 195.0, delta=0.5)
 
     def test_water_mass_matches_volume_times_density(self):
-        plan = calc.plan_dilution(78, 45.0, 40.0)
+        plan = calc.plan_dilution(78, 100.0, 40.0)
         self.assertAlmostEqual(plan["water_mass"], plan["water_volume"] * calc.water_density_temp(20.0), places=9)
 
     def test_summed_volume_exceeds_real_volume_by_contraction(self):
-        plan = calc.plan_dilution(78, 45.0, 40.0)
-        self.assertGreater(plan["summed_volume"], 45.0)
+        plan = calc.plan_dilution(78, 100.0, 40.0)
+        self.assertGreater(plan["summed_volume"], plan["total_volume"])
+
+    def test_water_scales_linearly_with_probe_volume(self):
+        self.assertAlmostEqual(calc.plan_dilution(60, 50.0, 40.0)["water_mass"] * 2,
+                               calc.plan_dilution(60, 100.0, 40.0)["water_mass"], places=9)
 
     def test_probe_at_or_below_target_raises(self):
         with self.assertRaises(ValueError):
-            calc.plan_dilution(40, 45.0, 40.0)
+            calc.plan_dilution(40, 100.0, 40.0)
 
     def test_invalid_target_or_volume_raises(self):
         with self.assertRaises(ValueError):
             calc.plan_dilution(78, 0, 40.0)
         with self.assertRaises(ValueError):
-            calc.plan_dilution(78, 45.0, 100.0)
+            calc.plan_dilution(78, 100.0, 100.0)
 
 
 class TestInputValidation(unittest.TestCase):
@@ -231,6 +244,42 @@ class TestComparisons(unittest.TestCase):
     def test_lab_value_without_calculation_is_not_compared(self):
         result = run(measured_alcohol="", measured_extract="5", lab_alcohol="78")
         self.assertNotIn("lab", result["comparison"])
+
+
+class TestTolerances(unittest.TestCase):
+    def test_dilution_amplifies_device_tolerance(self):
+        result = run(probe_volume="100", water_value="25,5", water_mode=m.WATER_BY_MASS)
+        out = result["output"]
+        self.assertGreater(out["amplification"], 1.15)
+        self.assertLess(out["amplification"], 1.30)
+        self.assertAlmostEqual(out["alcohol_tolerance"], m.DEVICE_ALCOHOL_TOLERANCE * out["amplification"])
+
+    def test_distillate_dilution_amplifies_more_than_macerate(self):
+        macerate = run(probe_volume="100", water_value="25,5", water_mode=m.WATER_BY_MASS)
+        distillate = run(probe_volume="100", water_value="98,4", water_mode=m.WATER_BY_MASS)
+        self.assertGreater(distillate["output"]["alcohol_tolerance"], macerate["output"]["alcohol_tolerance"] + 0.2)
+
+    def test_direct_measurement_has_plain_device_tolerance(self):
+        result = m.evaluate_measurement({"mode": m.MODE_DIRECT, "room_temp": "20", "measured_alcohol": "27"}, now=NOW)
+        self.assertAlmostEqual(result["output"]["alcohol_tolerance"], m.DEVICE_ALCOHOL_TOLERANCE)
+
+    def test_spindle_deviation_within_and_outside_limits(self):
+        base = run(probe_volume="100", water_value="25,5", water_mode=m.WATER_BY_MASS)
+        actual = base["output"]["actual_alcohol"]
+        limit = m.SPINDLE_ALCOHOL_TOLERANCE + base["output"]["alcohol_tolerance"]
+        inside = run(probe_volume="100", water_value="25,5", water_mode=m.WATER_BY_MASS,
+                     spindle_alcohol=str(round(actual - limit * 0.5, 2)).replace(".", ","))
+        outside = run(probe_volume="100", water_value="25,5", water_mode=m.WATER_BY_MASS,
+                      spindle_alcohol=str(round(actual - limit * 2, 2)).replace(".", ","))
+        self.assertTrue(inside["comparison"]["alcohol"]["within_limit"])
+        self.assertFalse(outside["comparison"]["alcohol"]["within_limit"])
+        self.assertAlmostEqual(inside["comparison"]["alcohol"]["limit"], limit)
+
+    def test_report_mentions_limits(self):
+        text = m.format_report(run(probe_volume="100", water_value="25,5", water_mode=m.WATER_BY_MASS,
+                                   spindle_alcohol="49,5"))
+        self.assertIn("Gerätegrenze", text)
+        self.assertIn("Messgrenzen", text)
 
 
 class TestReport(unittest.TestCase):

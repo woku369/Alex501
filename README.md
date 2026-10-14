@@ -12,7 +12,8 @@ Das Alex 501 Gerät von Anton Paar kann nur bis maximal 47 %vol. Alkoholgehalt m
 - ✅ Berechnung der tatsächlichen Dichte basierend auf der Alkoholtabelle (Canadian Alcoholometric Laboratory Table 1996, berechnet aus der OIML-R-22-Formel)
 - ✅ Berechnung des tatsächlichen Extraktgehalts
 - ✅ Grafische Oberfläche mit Eingabe-Karten, Ergebnis-Kacheln und Meldungen direkt im Fenster
-- ✅ Verdünnungsplaner: Probe- und Wassermenge für Zielalkohol und Zielvolumen (mindestens 40 ml verdünnte Probe)
+- ✅ Verdünnungsplaner: nötige Wassermenge für eine vorgegebene Probemenge (z. B. 100 ml im Messkolben) und den Zielalkohol, mit Anzahl möglicher Messungen
+- ✅ Gerätegrenze des Alkohols (Verstärkung durch die Verdünnung) und Messgrenzen für den Spindelvergleich
 - ✅ Modus „Direkt gemessen“ für Proben im Messbereich (z. B. Fertigprodukte): Alex-Werte werden unverändert übernommen
 - ✅ Vergleich mit Spindelung und optionalen Laborwerten (auch nachträglich ergänzbar)
 - ✅ Export der Ergebnisse (JSON/TXT) und der Messhistorie (CSV)
@@ -47,7 +48,7 @@ Das Alex 501 Gerät von Anton Paar kann nur bis maximal 47 %vol. Alkoholgehalt m
 
 ### 1. Verdünnung ansetzen
 - Verdünnen Sie die Probe auf etwa 40 %vol (so entsteht keine Trübung). Für eine Messung werden mindestens 40 ml verdünnte Probe benötigt.
-- Der **Verdünnungsplaner** (Tab „Messung“) schlägt Probe- und Wassermenge vor. Empfohlen: Probe nach Volumen im Messkolben, Wasser wiegen.
+- Der **Verdünnungsplaner** (Tab „Messung“) nennt die Wassermenge für die vorgegebene Probemenge (Standard: 100 ml im Messkolben). Vorgesehen: Probe nach Volumen im Messkolben, Wasser wiegen.
 - Notieren Sie, was tatsächlich abgemessen und eingewogen wurde.
 
 ### 2. Messung mit Alex 501

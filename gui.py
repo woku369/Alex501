@@ -398,14 +398,14 @@ class Alex501App:
 
         probe_alc = tk.StringVar(value="50")
         target_alc = tk.StringVar(value="40")
-        total_volume = tk.StringVar(value="45")
+        probe_volume = tk.StringVar(value="100")
 
-        card, body = self._card(win, "Zielwerte")
+        card, body = self._card(win, "Vorgaben")
         card.pack(fill="x", padx=16, pady=(16, 8))
         body.columnconfigure(1, weight=1)
         rows = (("Alkohol der Probe (geschätzt)", probe_alc, "%vol"),
                 ("Ziel-Alkohol der Verdünnung", target_alc, "%vol"),
-                ("Volumen der verdünnten Probe", total_volume, "ml"))
+                ("Probevolumen (Messkolben)", probe_volume, "ml"))
         entries = []
         for index, (label, var, unit) in enumerate(rows):
             ttk.Label(body, text=label, style="Card.TLabel").grid(row=index, column=0, sticky="w", pady=3, padx=(0, 10))
@@ -424,14 +424,15 @@ class Alex501App:
                                justify="left", wraplength=360)
         for label in (probe_line, water_line, detail_line):
             label.pack(fill="x", pady=2)
-        tk.Label(win, text="Richtwert zum Ansetzen (Messkolben für die Probe, Wasser wiegen). Im Hauptfenster die "
+        tk.Label(win, text="Richtwert zum Ansetzen: Probe im Messkolben abmessen, Wasser wiegen. Im Hauptfenster die "
                            "tatsächlich abgemessenen und eingewogenen Werte eingeben.",
                  bg=C["bg"], fg=C["muted"], font=self.f_small, wraplength=392, justify="left").pack(
             padx=16, pady=(0, 8), anchor="w")
 
         def update(_event=None):
             try:
-                plan = calc.plan_dilution(meas.parse_decimal(probe_alc.get()), meas.parse_decimal(total_volume.get()),
+                volume = meas.parse_decimal(probe_volume.get())
+                plan = calc.plan_dilution(meas.parse_decimal(probe_alc.get()), volume,
                                           meas.parse_decimal(target_alc.get()))
             except (TypeError, ValueError) as error:
                 message = str(error) if isinstance(error, ValueError) and "float" not in str(error) else \
@@ -440,12 +441,15 @@ class Alex501App:
                 water_line.config(text="")
                 detail_line.config(text=message)
                 return
-            probe_line.config(text=f"Probe:  {format_de(plan['probe_volume'], 1)} ml")
+            probe_line.config(text=f"Probe:  {format_de(volume, 1)} ml")
             water_line.config(text=f"Wasser: {format_de(plan['water_mass'], 1)} g")
-            detail = (f"Summe der Volumina {format_de(plan['summed_volume'], 1)} ml, reales Volumen nach der "
-                      f"Kontraktion {format_de(meas.parse_decimal(total_volume.get()), 1)} ml.")
-            if meas.parse_decimal(total_volume.get()) < meas.MIN_MEASURING_VOLUME:
-                detail += f" Achtung: für eine Messung werden mindestens {format_de(meas.MIN_MEASURING_VOLUME, 0)} ml benötigt."
+            measurements = int(plan["total_volume"] // meas.MIN_MEASURING_VOLUME)
+            detail = (f"Verdünnung gesamt etwa {format_de(plan['total_volume'], 1)} ml nach der Kontraktion "
+                      f"(Summe der Volumina {format_de(plan['summed_volume'], 1)} ml). "
+                      f"Reicht für {measurements} Messung{'en' if measurements != 1 else ''} "
+                      f"zu je {format_de(meas.MIN_MEASURING_VOLUME, 0)} ml.")
+            if measurements < 1:
+                detail += " Achtung: für eine Messung werden mindestens 40 ml benötigt."
             detail_line.config(text=detail)
 
         def preset(alcohol):
@@ -529,9 +533,13 @@ class Alex501App:
             widget.set("–" if value is None else format_de(value, decimals), caption if value is not None else "")
 
         origin = "Originalprobe" if diluted else "direkt gemessen"
-        tile(self.tile_alcohol, out["actual_alcohol"], 2,
-             (f"gemessen {format_de(inp['measured_alcohol'], 2)} %vol in der Verdünnung" if diluted
-              else "direkt gemessen") + calibrated if inp["measured_alcohol"] is not None else "")
+        alcohol_caption = ""
+        if inp["measured_alcohol"] is not None:
+            alcohol_caption = (f"gemessen {format_de(inp['measured_alcohol'], 2)} %vol in der Verdünnung" if diluted
+                               else "direkt gemessen") + calibrated
+            if out["alcohol_tolerance"] is not None:
+                alcohol_caption += f"; Gerätegrenze ±{format_de(out['alcohol_tolerance'], 2)} %vol"
+        tile(self.tile_alcohol, out["actual_alcohol"], 2, alcohol_caption)
         tile(self.tile_density, out["actual_density"], 5,
              f"{origin}; gemessen {format_de(inp['measured_density'], 5)}" if inp["measured_density"] is not None else "")
         tile(self.tile_extract, out["actual_extract"], 2,
@@ -563,28 +571,37 @@ class Alex501App:
         lines = []
         if "alcohol" in comparison:
             c = comparison["alcohol"]
-            lines.append(("Spindel Alkohol", f"{format_de(c['spindle_value'], 2)} %vol",
-                          f"Abweichung {meas._signed(c['deviation'], 2)} %vol ({meas._signed(c['deviation_percent'], 1)} %)"))
+            text = f"Abweichung {meas._signed(c['deviation'], 2)} %vol ({meas._signed(c['deviation_percent'], 1)} %)"
+            if "limit" in c:
+                text += (f"\ninnerhalb der Messgrenzen (±{format_de(c['limit'], 2)} %vol)" if c["within_limit"]
+                         else f"\naußerhalb der Messgrenzen (±{format_de(c['limit'], 2)} %vol)")
+            lines.append(("Spindel Alkohol", f"{format_de(c['spindle_value'], 2)} %vol", text,
+                          C["primary_dark"] if c.get("within_limit", True) else C["warn_fg"]))
         if "density" in comparison and "deviation" in comparison["density"]:
             c = comparison["density"]
             lines.append(("Spindel Dichte (20 °C)", f"{format_de(c['spindle_value_20C'], 5)} g/cm³",
-                          f"Abweichung {meas._signed(c['deviation'], 5)} g/cm³ ({meas._signed(c['deviation_percent'], 2)} %)"))
+                          f"Abweichung {meas._signed(c['deviation'], 5)} g/cm³ ({meas._signed(c['deviation_percent'], 2)} %)",
+                          C["primary_dark"]))
         names = {"alcohol": ("Labor Alkohol", "%vol", 2), "density": ("Labor Dichte", "g/cm³", 5),
                  "extract": ("Labor Extrakt", "g/100ml", 2)}
         for key, (label, unit, decimals) in names.items():
             c = comparison.get("lab", {}).get(key)
             if c:
                 lines.append((label, f"{format_de(c['lab_value'], decimals)} {unit}",
-                              f"Abweichung {meas._signed(c['deviation'], decimals)} {unit} ({meas._signed(c['deviation_percent'], 1)} %)"))
+                              f"Abweichung {meas._signed(c['deviation'], decimals)} {unit} ({meas._signed(c['deviation_percent'], 1)} %)",
+                              C["primary_dark"]))
         if not lines:
             return
         card, body = self._card(self.compare_frame, "Vergleich mit Referenzwerten", accent=C["density"])
         card.pack(fill="x", pady=(4, 0))
-        for index, (label, value, deviation) in enumerate(lines):
-            ttk.Label(body, text=label, style="Card.TLabel").grid(row=index, column=0, sticky="w", padx=(0, 16), pady=2)
-            ttk.Label(body, text=value, style="Card.TLabel").grid(row=index, column=1, sticky="w", padx=(0, 16), pady=2)
-            tk.Label(body, text=deviation, bg=C["card"], fg=C["primary_dark"], font=self.f_bold).grid(
-                row=index, column=2, sticky="w", pady=2)
+        for index, (label, value, deviation, color) in enumerate(lines):
+            top = index * 2
+            ttk.Label(body, text=label, style="Card.TLabel").grid(row=top, column=0, sticky="w", padx=(0, 16),
+                                                                  pady=(6 if index else 0, 0))
+            ttk.Label(body, text=value, style="Card.TLabel").grid(row=top, column=1, sticky="w",
+                                                                  pady=(6 if index else 0, 0))
+            tk.Label(body, text=deviation, bg=C["card"], fg=color, font=self.f_bold, justify="left",
+                     anchor="w").grid(row=top + 1, column=0, columnspan=2, sticky="w")
 
     def _save_result(self, result):
         """Speichert die Messung in der Messhistorie; unveränderte Wiederholungen werden nicht doppelt abgelegt."""
