@@ -595,6 +595,7 @@ Eingabewerte:
 - Die Berechnung berücksichtigt Volumenkontraktion
 - Dichte-Werte basieren auf der Alkoholtabelle CRA 1996 (nach OIML R 22)
 - Für höchste Präzision wird eine Kalibrierung empfohlen
+- Extraktstoffe werden bei der Alkoholberechnung nicht berücksichtigt (Abweichung steigt mit dem Extraktgehalt)
 {f'- Spindelung (Aräometer) ist die Referenzmethode für Zollamt' if spindle_alc else ''}
 """
 

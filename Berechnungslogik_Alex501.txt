@@ -54,7 +54,21 @@ Deshalb wird über die Ethanolmasse bilanziert, nicht über Volumina.
   Die Kalibrierkurve ist eine lineare Regression zwischen Messwerten und Referenzwerten.
   Sie wird nur auf den berechneten Alkoholgehalt angewendet, nicht auf die gemessenen Werte.
 
-## 6. Spindelvergleich
+## 6. Bekannte Grenze: Extraktstoffe
+- Die Massenbilanz (Punkt 2) und die Dichteberechnung (Punkt 3) nehmen ein reines
+  Ethanol-Wasser-Gemisch an. Extraktstoffe nehmen Volumen ein; dadurch wird der Alkoholgehalt
+  der Originalprobe tendenziell zu hoch, die Dichte zu niedrig berechnet.
+- Größenordnung (Modellrechnung, Annahme partielles spezifisches Volumen 0,63 ml/g, nicht an
+  echten Mazeraten geprüft; 60 %vol, 1:1 verdünnt): +0,3 %vol bei 2 g/100 ml, +0,9 %vol bei
+  5 g/100 ml, +1,7 %vol bei 10 g/100 ml Extrakt. Dichte: -0,0014 / -0,0036 / -0,0073 g/cm³.
+- Der Extrakt (Punkt 4) ist davon kaum betroffen (unter 0,4 % Abweichung im Modell).
+- Entscheidung (Stand jetzt): keine Korrektur, da noch keine belegten Extraktwerte der
+  eigenen Mazerate vorliegen. Die Kalibrierkurve (Punkt 5) kann einen gleichbleibenden
+  Rest-Bias auffangen.
+- Geplant: Korrektur aus Referenzdaten (Mazerat verdünnt am Alex 501 gemessen, dazu Destillat
+  und Spindel) einpflegen, sobald solche Messreihen vorliegen.
+
+## 7. Spindelvergleich
 - **Abweichung:**
   Abweichung = Tatsächlicher_Alkoholgehalt - Spindelwert
   Abweichung_% = (Abweichung / Spindelwert) * 100

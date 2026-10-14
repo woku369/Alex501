@@ -80,6 +80,8 @@ Extrakte (g/100 ml) verdünnen sich proportional zum realen Volumen der Verdünn
 
 ⚠️ **Genauigkeit**: Die Berechnungen basieren auf Standardkurven für reine Ethanol-Wasser-Gemische. Mazerate enthalten zusätzliche Inhaltsstoffe (Kräuterextrakte), die die Eigenschaften beeinflussen können.
 
+⚠️ **Bekannte Grenze – Extraktstoffe**: Die Massenbilanz für den Alkoholgehalt behandelt die Probe als reines Ethanol-Wasser-Gemisch. Der Extrakt nimmt aber Volumen ein, wodurch der berechnete Alkoholgehalt der Originalprobe tendenziell zu hoch ausfällt; die berechnete Dichte fällt dann entsprechend zu niedrig aus. Eine Modellrechnung (Annahme: Extrakt mit partiellem spezifischem Volumen 0,63 ml/g, zuckerähnlich; **nicht an echten Mazeraten geprüft**) ergab bei 60 %vol und 1:1-Verdünnung etwa +0,3 %vol bei 2 g/100 ml, +0,9 %vol bei 5 g/100 ml und +1,7 %vol bei 10 g/100 ml Extrakt. Der Extraktwert selbst wird dabei kaum beeinflusst (Abweichung unter 0,4 %). Bis belegte Extraktwerte der eigenen Mazerate vorliegen, wird bewusst keine Korrektur angewendet; die lineare Kalibrierkurve (Spindel gegen Alex 501) kann einen näherungsweise gleichbleibenden Rest-Bias auffangen. Geplante Korrektur aus Referenzdaten: siehe `Roadmap_Alex501.txt`, Version 1.1.
+
 💡 **Empfehlung**: Für höchste Präzision führen Sie eine Verdünnungsreihe mit einer Referenzprobe bekannter Werte durch und nutzen Sie die Kalibrierkurve (linear; erweiterte Kalibrierung in Entwicklung).
 
 ## Zukünftige Erweiterungen

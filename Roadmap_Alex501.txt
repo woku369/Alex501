@@ -13,6 +13,9 @@
 ## Version 1.1
 - Erweiterte Kalibrierung (polynomisch, spline)
 - Mehrere Kalibrierprofile
+- Extraktkorrektur für Alkohol und Dichte aus Referenzdaten (Mazerat verdünnt am Alex 501
+  gemessen, dazu Destillat und Spindel), sobald belegte Extraktwerte vorliegen
+  (bekannte Grenze, siehe Berechnungslogik_Alex501.txt, Punkt 6)
 - Verbesserte Fehler- und Hinweisdialoge
 - Export/Import von Messdaten (CSV, Excel)
 
