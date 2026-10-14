@@ -2,23 +2,32 @@
 
 ## 1. Verdünnungsfaktor
 - **Formel:**
-  Verdünnungsfaktor = (Probevolumen + Wasservolumen) / Probevolumen
+  Verdünnungsfaktor = (Probevolumen + Wasservolumen) / Probevolumen   (Ansatz, ohne Kontraktion)
+  Wirksamer Faktor = V_Verdünnung(real) / Probevolumen, mit
+  V_Verdünnung(real) = (ρ(φ_Probe) * V_Probe + ρ_Wasser * V_Wasser) / ρ(φ_gemessen)
+  (Gesamtmasse durch Dichte der Verdünnung; um die Volumenkontraktion kleiner als die Summe der Volumina)
 
-## 2. Tatsächlicher Alkoholgehalt der Originalprobe
-- **Schritt 1:** Alkoholmenge in der verdünnten Probe
-  Alkohol_in_Verdünnung = (Gemessener Alkoholgehalt / 100) * (Probevolumen + Wasservolumen)
+## 2. Tatsächlicher Alkoholgehalt der Originalprobe (Massenbilanz)
+Volumina von Ethanol und Wasser sind nicht additiv (Volumenkontraktion), Massen schon.
+Deshalb wird über die Ethanolmasse bilanziert, nicht über Volumina.
+- **Schritt 1:** Massenanteil Ethanol der verdünnten Probe aus dem gemessenen Alkoholgehalt
+  w_Verdünnung = (φ_gemessen / 100) * ρ_Ethanol / ρ(φ_gemessen)
+  (ρ aus der Alkoholtabelle, wahre Dichte bei 20 °C; ρ_Ethanol = ρ(100 %vol))
 
-- **Schritt 2:** Rückrechnung auf Originalprobe
-  Tatsächlicher_Alkoholgehalt = (Alkohol_in_Verdünnung / Probevolumen) * 100
+- **Schritt 2:** Bilanz nach dem Alkoholgehalt der Originalprobe φ_Probe auflösen
+  V_Probe * (φ_Probe / 100) * ρ_Ethanol
+    = w_Verdünnung * (ρ(φ_Probe) * V_Probe + ρ_Wasser * V_Wasser)
+  Die linke Seite wächst mit φ_Probe schneller als die rechte, die Lösung ist eindeutig
+  (numerisch per Bisektion zwischen φ_gemessen und 100 %vol).
+  Liegt die Lösung über 100 %vol, wird eine Fehlermeldung ausgegeben.
 
-- **Schritt 3:** Volumenkontraktion (nur bei >50 %vol)
-  Falls Tatsächlicher_Alkoholgehalt > 50:
-    Korrektur = 1 + 0,001 * (Tatsächlicher_Alkoholgehalt - 50)
-    Tatsächlicher_Alkoholgehalt *= Korrektur
-
-- **Schritt 4:** Optional Kalibrierkurve
+- **Schritt 3:** Optional Kalibrierkurve
   Falls aktiviert:
     Tatsächlicher_Alkoholgehalt = Kalibrierfunktion(Tatsächlicher_Alkoholgehalt)
+
+- **Annahmen:** Probe und Verdünnung verhalten sich wie ein reines Ethanol-Wasser-Gemisch
+  (Extraktstoffe werden bei der Dichte vernachlässigt). Alle Volumina beziehen sich auf 20 °C
+  (Temperaturkorrektur der Eingaben siehe Quellcode).
 
 ## 3. Tatsächliche Dichte
 - **Schritt 1:** Erwartete Dichte der verdünnten Probe (Alkoholtabelle CRA 1996 nach OIML R 22, wahre Dichte bei 20 °C)
@@ -33,7 +42,9 @@
 
 ## 4. Tatsächlicher Extraktgehalt
 - **Formel:**
-  Tatsächlicher_Extrakt = Gemessener Extrakt * Verdünnungsfaktor
+  Tatsächlicher_Extrakt = Gemessener Extrakt * Wirksamer Faktor
+  (Extrakt in g/100 ml bezieht sich auf das reale Volumen der Verdünnung; ohne gemessenen
+  Alkoholgehalt wird der Verdünnungsfaktor aus der Volumensumme verwendet)
 
 ## 5. Kalibrierkurve
 - **Verwendung:**

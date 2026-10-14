@@ -66,7 +66,7 @@ Das Alex 501 Gerät von Anton Paar kann nur bis maximal 47 %vol. Alkoholgehalt m
 ## Wissenschaftlicher Hintergrund
 
 ### Volumenkontraktion
-Beim Mischen von Ethanol und Wasser tritt eine Volumenkontraktion auf:
+Beim Mischen von Ethanol und Wasser tritt eine Volumenkontraktion auf (die App bilanziert deshalb über die Ethanolmasse, nicht über Volumina):
 - 50ml Ethanol + 50ml Wasser ≠ 100ml Mischung
 - Bei 50:50 Mischung ca. 3-4% Volumenreduktion
 
@@ -74,7 +74,7 @@ Beim Mischen von Ethanol und Wasser tritt eine Volumenkontraktion auf:
 Die App verwendet die Ethanol-Wasser-Alkoholtabelle bei 20 °C (Canadian Alcoholometric Laboratory Table 1996, 2090 Zeilen, berechnet aus der OIML-R-22-Formel; siehe `alkoholtabelle.py`) mit linearer Interpolation für Zwischenwerte. Die Tabelle gibt die Dichte in Luft an; die App rechnet sie mit dem Luftauftrieb (Luft 0,0012 g/cm³, Gewichte 8,0 g/cm³) auf die wahre Dichte um, wie sie ein Biegeschwinger-Dichtemessgerät anzeigt.
 
 ### Extraktberechnung
-Extrakte verdünnen sich proportional zum Gesamtvolumen unter Berücksichtigung der Volumenkontraktion.
+Extrakte (g/100 ml) verdünnen sich proportional zum realen Volumen der Verdünnung. Dieses ist durch die Volumenkontraktion kleiner als die Summe von Probe- und Wasservolumen; die App berechnet es aus Gesamtmasse und Dichte der Verdünnung.
 
 ## Wichtige Hinweise
 

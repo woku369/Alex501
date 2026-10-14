@@ -17,10 +17,10 @@ from calculations import (
     correct_volume_temp,
     water_density_temp,
     correct_density_to_20C,
-    apply_contraction_correction,
     apply_calibration_curve,
     compute_dilution_factor,
     compute_actual_alcohol,
+    compute_effective_dilution_factor,
     compute_actual_density,
     compute_actual_extract,
 )
@@ -437,14 +437,18 @@ class Alex501App:
                 # probe_vol und water_vol sind hier garantiert nicht None
                 assert probe_vol is not None and water_vol is not None
                 dilution_factor = compute_dilution_factor(probe_vol, water_vol)
-                total_diluted_volume = probe_vol + water_vol
+                effective_dilution_factor = dilution_factor
 
-                # Alkoholgehalt berechnen (falls vorhanden)
+                # Alkoholgehalt berechnen (falls vorhanden); die Massenbilanz berücksichtigt
+                # die Volumenkontraktion von Ethanol-Wasser-Gemischen
                 if measured_alc is not None:
-                    actual_alcohol_percent = compute_actual_alcohol(measured_alc, probe_vol, total_diluted_volume)
-
-                    # Korrektur für Volumenkontraktion
-                    actual_alcohol_percent = apply_contraction_correction(actual_alcohol_percent)
+                    try:
+                        actual_alcohol_percent = compute_actual_alcohol(measured_alc, probe_vol, water_vol)
+                    except ValueError as e:
+                        messagebox.showerror("Fehler", str(e))
+                        return
+                    effective_dilution_factor = compute_effective_dilution_factor(
+                        measured_alc, probe_vol, water_vol)
 
                     # Kalibrierkurve auf den berechneten (tatsächlichen) Alkoholgehalt anwenden,
                     # nicht auf den gemessenen Wert der verdünnten Probe (siehe Berechnungslogik_Alex501.txt, Punkt 5)
@@ -460,7 +464,7 @@ class Alex501App:
 
                 # Extrakt berechnen (falls vorhanden)
                 if measured_ext is not None:
-                    actual_extract = compute_actual_extract(measured_ext, dilution_factor)
+                    actual_extract = compute_actual_extract(measured_ext, effective_dilution_factor)
 
             # Ergebnisse anzeigen
             self.result_text.delete('1.0', tk.END)
@@ -566,6 +570,8 @@ Eingabewerte:
   Verdünnung: {format_de(probe_vol, 1)} ml Probe + {format_de(water_vol, 1)} ml Wasser
   Verdünnungsfaktor: 1:{format_de(dilution_factor, 2)}
 """
+                if measured_alc is not None:
+                    results += f"  Wirksamer Faktor (mit Volumenkontraktion): 1:{format_de(effective_dilution_factor, 2)}\n"
                 if measured_alc_original is not None:
                     results += f"\n  Gemessener Alkoholgehalt: {format_de(measured_alc_original, 2)} %vol."
                 if measured_dens is not None:

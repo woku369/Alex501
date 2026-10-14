@@ -36,9 +36,11 @@ class TestVolumeTemperatureCorrection(unittest.TestCase):
 
 
 class TestWaterDensity(unittest.TestCase):
-    def test_density_at_4_degrees(self):
-        # Bei 4 C fällt der quadratische/lineare Korrekturterm weg
-        self.assertAlmostEqual(calc.water_density_temp(4), 0.99987)
+    def test_literature_values(self):
+        # Wasser: 20 °C ca. 0,99820, 25 °C ca. 0,99705, 4 °C ca. 1,00000 g/cm³
+        self.assertAlmostEqual(calc.water_density_temp(20), 0.99820, delta=1e-4)
+        self.assertAlmostEqual(calc.water_density_temp(25), 0.99705, delta=1e-4)
+        self.assertAlmostEqual(calc.water_density_temp(4), 1.00000, delta=1e-4)
 
 
 class TestDensityInterpolation(unittest.TestCase):
@@ -77,16 +79,6 @@ class TestDensityTemperatureCorrection(unittest.TestCase):
         self.assertGreater(corrected, 0.95)
 
 
-class TestContractionCorrection(unittest.TestCase):
-    def test_no_correction_at_or_below_50_percent(self):
-        self.assertEqual(calc.apply_contraction_correction(40), 40)
-        self.assertEqual(calc.apply_contraction_correction(50), 50)
-
-    def test_correction_above_50_percent(self):
-        # Korrektur = 1 + 0,001 * (60-50) = 1,01 -> 60 * 1,01 = 60,6
-        self.assertAlmostEqual(calc.apply_contraction_correction(60), 60.6)
-
-
 class TestCalibrationCurve(unittest.TestCase):
     def test_linear_fit_applied_to_value(self):
         # refs = meas + 1 (siehe Herleitung: Steigung 1, Achsenabschnitt 1)
@@ -99,10 +91,57 @@ class TestDilutionCalculations(unittest.TestCase):
         self.assertAlmostEqual(calc.compute_dilution_factor(10, 10), 2.0)
         self.assertAlmostEqual(calc.compute_dilution_factor(25, 75), 4.0)
 
-    def test_actual_alcohol(self):
-        # 40 %vol in 20 ml Gesamtvolumen (10 ml Probe + 10 ml Wasser) zurückgerechnet
-        # auf 10 ml Probevolumen ergibt 80 %vol (vor Kontraktionskorrektur).
-        self.assertAlmostEqual(calc.compute_actual_alcohol(40, 10, 20), 80.0)
+    def test_actual_alcohol_without_water_is_unchanged(self):
+        self.assertAlmostEqual(calc.compute_actual_alcohol(63.2, 10, 0), 63.2, places=6)
+
+    def test_actual_alcohol_zero(self):
+        self.assertEqual(calc.compute_actual_alcohol(0, 10, 10), 0.0)
+
+    @staticmethod
+    def _forward_diluted_alcohol(phi_probe, probe_vol, water_vol):
+        """Vorwärtsrechnung: %vol der Verdünnung aus Probe und Wasser (Massenerhaltung)."""
+        ethanol_mass = probe_vol * phi_probe / 100 * calc._ETHANOL_DENSITY_20
+        total_mass = (calc.interpolate_density_from_alcohol(phi_probe) * probe_vol
+                      + calc._WATER_DENSITY_20 * water_vol)
+        target = ethanol_mass / total_mass
+        low, high = 0.0, 100.0
+        for _ in range(80):
+            middle = (low + high) / 2
+            if calc.alcohol_mass_fraction(middle) < target:
+                low = middle
+            else:
+                high = middle
+        return (low + high) / 2
+
+    def test_actual_alcohol_roundtrip(self):
+        for phi, probe, water in [(60, 10, 10), (75, 5, 20), (45, 10, 5), (96, 1, 1)]:
+            diluted = self._forward_diluted_alcohol(phi, probe, water)
+            self.assertAlmostEqual(calc.compute_actual_alcohol(diluted, probe, water), phi, places=4)
+
+    def test_contraction_makes_result_lower_than_additive_volumes(self):
+        measured, probe, water = 40, 10, 10
+        additive = measured / 100 * (probe + water) / probe * 100  # 80 %vol bei additiven Volumina
+        actual = calc.compute_actual_alcohol(measured, probe, water)
+        self.assertLess(actual, additive)
+        self.assertGreater(actual, measured)
+
+    def test_equal_volumes_of_ethanol_and_water_contract_by_3_to_4_percent(self):
+        # 50 ml Ethanol + 50 ml Wasser: README nennt ca. 3-4 % Volumenreduktion
+        diluted = self._forward_diluted_alcohol(100, 50, 50)
+        self.assertAlmostEqual(diluted, 51.8, delta=0.3)
+        factor = calc.compute_effective_dilution_factor(diluted, 50, 50)
+        contraction_percent = (2.0 - factor) / 2.0 * 100
+        self.assertGreater(contraction_percent, 3.0)
+        self.assertLess(contraction_percent, 4.0)
+
+    def test_measured_value_too_high_for_dilution_raises(self):
+        with self.assertRaises(ValueError):
+            calc.compute_actual_alcohol(80, 10, 30)
+
+    def test_mass_fraction_matches_cra_table_rows(self):
+        # %vol -> %mass laut CRA-Tabelle 1996 (Dichte in Luft 0,9725 / 0,8845 / 0,8582 / 0,8281)
+        for vol, mass in [(20.0, 16.22), (70.0, 62.38), (80.0, 73.48), (90.0, 85.67)]:
+            self.assertAlmostEqual(calc.alcohol_mass_fraction(vol) * 100, mass, delta=0.01)
 
     def test_actual_density(self):
         actual_density, expected_density_original = calc.compute_actual_density(

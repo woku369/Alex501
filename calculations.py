@@ -26,9 +26,10 @@ def correct_volume_temp(volume, temp, is_water=False):
 
 
 def water_density_temp(temp):
-    """Berechnet die Dichte von Wasser in g/cm³ in Abhängigkeit von der Temperatur (°C)."""
-    # Näherungsformel für 0-40°C
-    return 0.99987 - 0.00007 * (temp - 4) - 0.0000002 * (temp - 4) ** 2
+    """Berechnet die Dichte von luftfreiem Wasser in g/cm³ in Abhängigkeit von der Temperatur (°C)
+    nach Tanaka et al. (2001), gültig für 0-40 °C."""
+    a1, a2, a3, a4, a5 = -3.983035, 301.797, 522528.9, 69.34881, 999.974950  # a5 in kg/m³
+    return a5 * (1 - ((temp + a1) ** 2 * (temp + a2)) / (a3 * (temp + a4))) / 1000
 
 
 # Alkoholtabelle (Canadian Alcoholometric Laboratory Table 1996, berechnet aus der
@@ -74,6 +75,16 @@ def interpolate_density_from_alcohol(alc):
     return float(density_in_air_to_true(density_air))
 
 
+_ETHANOL_DENSITY_20 = interpolate_density_from_alcohol(100)  # g/cm³, reines Ethanol bei 20 °C
+_WATER_DENSITY_20 = water_density_temp(20.0)  # g/cm³
+
+
+def alcohol_mass_fraction(vol_percent):
+    """Rechnet %vol in den Massenanteil Ethanol (0-1) um. Definition von %vol: Volumen des
+    reinen Ethanols (20 °C) je Volumen der Mischung, daher w = phi * rho_Ethanol / rho_Mischung."""
+    return vol_percent / 100 * _ETHANOL_DENSITY_20 / interpolate_density_from_alcohol(vol_percent)
+
+
 def correct_density_to_20C(density_at_temp, temp, alc_percent):
     """Korrigiert die Dichte von der aktuellen Temperatur auf 20°C (Referenztemperatur)."""
     # Temperaturkoeffizient für Dichte in g/(cm³·°C)
@@ -85,15 +96,6 @@ def correct_density_to_20C(density_at_temp, temp, alc_percent):
     delta_t = temp - 20.0
     # Bei höherer Temp ist Dichte niedriger, also bei Korrektur auf 20°C subtrahieren
     return density_at_temp - coeff * delta_t
-
-
-def apply_contraction_correction(alcohol_percent):
-    """Korrigiert den Alkoholgehalt für die Volumenkontraktion bei Ethanol-Wasser-
-    Mischungen oberhalb von 50 %vol."""
-    if alcohol_percent > 50:
-        contraction_correction = 1 + (0.001 * (alcohol_percent - 50))
-        return alcohol_percent * contraction_correction
-    return alcohol_percent
 
 
 def apply_calibration_curve(calib_data, value):
@@ -110,11 +112,52 @@ def compute_dilution_factor(probe_vol, water_vol):
     return total_diluted_volume / probe_vol
 
 
-def compute_actual_alcohol(measured_alc, probe_vol, total_diluted_volume):
-    """Rechnet den gemessenen Alkoholgehalt der verdünnten Probe auf die
-    Originalprobe zurück (vor Volumenkontraktions-Korrektur und Kalibrierung)."""
-    alcohol_volume_in_dilution = (measured_alc / 100) * total_diluted_volume
-    return (alcohol_volume_in_dilution / probe_vol) * 100
+def compute_actual_alcohol(measured_alc, probe_vol, water_vol):
+    """Rechnet den gemessenen Alkoholgehalt (%vol, 20 °C) der verdünnten Probe auf die
+    Originalprobe zurück (vor einer Kalibrierung).
+
+    Die Volumina von Ethanol und Wasser sind nicht additiv (Volumenkontraktion), die Massen
+    schon. Daher wird über die Ethanolmasse bilanziert:
+        Ethanolmasse Probe = V_Probe * phi_Probe/100 * rho_Ethanol
+        Ethanolmasse Verdünnung = w_Verdünnung * (rho(phi_Probe) * V_Probe + rho_Wasser * V_Wasser)
+    und phi_Probe aus der Gleichheit beider Seiten bestimmt (Bisektion, die Bilanz ist in
+    phi_Probe streng steigend). Annahme: Probe und Verdünnung verhalten sich wie ein reines
+    Ethanol-Wasser-Gemisch; Extraktstoffe werden vernachlässigt.
+    """
+    if measured_alc <= 0:
+        return 0.0
+    ethanol_fraction_diluted = alcohol_mass_fraction(measured_alc)
+
+    def balance(phi):
+        ethanol_mass = probe_vol * phi / 100 * _ETHANOL_DENSITY_20
+        total_mass = interpolate_density_from_alcohol(phi) * probe_vol + _WATER_DENSITY_20 * water_vol
+        return ethanol_mass - ethanol_fraction_diluted * total_mass
+
+    low, high = float(measured_alc), 100.0
+    # kleine Toleranz gegen numerisches Rauschen bei genau 100 %vol in der Originalprobe
+    if balance(high) < -1e-6 * probe_vol * _ETHANOL_DENSITY_20:
+        raise ValueError(
+            "Der gemessene Alkoholgehalt ist für diese Verdünnung zu hoch: "
+            "die Originalprobe müsste mehr als 100 %vol enthalten.")
+    for _ in range(60):
+        middle = (low + high) / 2
+        if balance(middle) < 0:
+            low = middle
+        else:
+            high = middle
+    return (low + high) / 2
+
+
+def compute_effective_dilution_factor(measured_alc, probe_vol, water_vol):
+    """Wirksamer Verdünnungsfaktor V_Verdünnung(real) / V_Probe unter Berücksichtigung der
+    Volumenkontraktion; maßgeblich für Größen je Volumen (z. B. Extrakt in g/100 ml).
+    Das reale Volumen folgt aus der Gesamtmasse und der Dichte der Verdünnung, beides als
+    Ethanol-Wasser-Gemisch angenommen (Extraktanteil in Probe und Verdünnung kürzt sich
+    näherungsweise heraus)."""
+    actual_alc = compute_actual_alcohol(measured_alc, probe_vol, water_vol)
+    total_mass = interpolate_density_from_alcohol(actual_alc) * probe_vol + _WATER_DENSITY_20 * water_vol
+    diluted_volume = total_mass / interpolate_density_from_alcohol(measured_alc)
+    return diluted_volume / probe_vol
 
 
 def compute_actual_density(measured_alc, measured_dens, actual_alcohol_percent, dilution_factor):
