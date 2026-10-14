@@ -148,6 +148,38 @@ def compute_actual_alcohol(measured_alc, probe_vol, water_vol):
     return (low + high) / 2
 
 
+def plan_dilution(probe_alc, total_volume, target_alc=40.0):
+    """Ansatzplanung: Probe- und Wassermenge für eine Verdünnung auf den Zielalkohol.
+
+    probe_alc: geschätzter Alkoholgehalt der Probe (%vol), total_volume: gewünschtes reales
+    Volumen der verdünnten Probe (ml, 20 °C), target_alc: Ziel-Alkoholgehalt der Verdünnung (%vol).
+    Gibt ein Dict mit Probevolumen (ml), Wasservolumen (ml, 20 °C) und Wassermasse (g) zurück.
+    Grundlage ist dieselbe Massenbilanz wie in compute_actual_alcohol, hier in geschlossener Form;
+    die Volumenkontraktion ist berücksichtigt, die Temperatur nicht (Richtwert zum Ansetzen,
+    maßgeblich sind die tatsächlich eingewogenen Werte).
+    """
+    if not 0 < target_alc < 100:
+        raise ValueError("Der Ziel-Alkoholgehalt muss zwischen 0 und 100 %vol liegen.")
+    if probe_alc <= target_alc:
+        raise ValueError("Die Probe liegt nicht über dem Ziel-Alkoholgehalt, eine Verdünnung ist nicht nötig.")
+    if total_volume <= 0:
+        raise ValueError("Das Zielvolumen muss größer als 0 ml sein.")
+    ethanol_fraction_target = alcohol_mass_fraction(target_alc)
+    probe_density = interpolate_density_from_alcohol(probe_alc)
+    water_per_probe = (probe_alc / 100 * _ETHANOL_DENSITY_20 / ethanol_fraction_target
+                       - probe_density) / _WATER_DENSITY_20
+    diluted_per_probe = ((probe_density + _WATER_DENSITY_20 * water_per_probe)
+                         / interpolate_density_from_alcohol(target_alc))
+    probe_volume = total_volume / diluted_per_probe
+    water_volume = probe_volume * water_per_probe
+    return {
+        "probe_volume": probe_volume,
+        "water_volume": water_volume,
+        "water_mass": water_volume * _WATER_DENSITY_20,
+        "summed_volume": probe_volume + water_volume,
+    }
+
+
 def compute_effective_dilution_factor(measured_alc, probe_vol, water_vol):
     """Wirksamer Verdünnungsfaktor V_Verdünnung(real) / V_Probe unter Berücksichtigung der
     Volumenkontraktion; maßgeblich für Größen je Volumen (z. B. Extrakt in g/100 ml).
