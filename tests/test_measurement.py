@@ -247,3 +247,50 @@ class TestReport(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestHistoryHelpers(unittest.TestCase):
+    ROW = {"id": 3, "timestamp": "2026-10-14T12:00:00", "sample_name": "Salbei", "batch": "26-01",
+           "mode": m.MODE_DILUTED, "room_temp": 21.0, "probe_volume": 29.9, "water_volume": 9.2,
+           "probe_volume_input": 30.0, "water_input": 9.2, "water_mode": m.WATER_BY_MASS,
+           "measured_alcohol": 40.0, "measured_density": 0.95, "measured_extract": 2.0,
+           "dilution_factor": 1.31, "effective_dilution_factor": 1.29, "spindle_alcohol": 50.0,
+           "spindle_density_at_temp": None, "spindle_density_20C": None, "calibration_applied": 0,
+           "lab_alcohol": 51.0, "lab_density": None, "lab_extract": None, "lab_note": "Labor X",
+           "actual_alcohol": 51.5, "actual_density": 0.93, "actual_extract": 2.6}
+
+    def test_table_values_match_columns_and_deviations(self):
+        values = m.history_table_values(self.ROW)
+        self.assertEqual(len(values), len(m.HISTORY_COLUMNS))
+        self.assertEqual(values[0], "14.10.2026 12:00")
+        self.assertEqual(values[3], "Verdünnt")
+        self.assertEqual(values[4], "51,50")
+        self.assertEqual(values[8], "+1,50")   # Δ Spindel
+        self.assertEqual(values[10], "+0,50")  # Δ Labor
+
+    def test_legacy_row_without_new_values_renders(self):
+        legacy = {"id": 1, "timestamp": "2026-01-05T10:00:00", "sample_name": "Alt", "actual_alcohol": 78.0}
+        values = m.history_table_values(legacy)
+        self.assertEqual(values[3], "–")
+        self.assertEqual(values[7], "–")
+        self.assertTrue(m.history_detail_lines(legacy))
+
+    def test_detail_lines_have_sections_and_lab_note(self):
+        lines = m.history_detail_lines(self.ROW)
+        heads = [text for kind, *rest in lines if kind == "head" for text in rest]
+        self.assertIn("Laboranalyse", heads)
+        self.assertIn(("item", "Bemerkung", "Labor X"), lines)
+        self.assertIn(("item", "Wasser (eingegeben)", "9,20 g"), lines)
+
+    def test_direct_row_has_no_dilution_section(self):
+        row = dict(self.ROW, mode=m.MODE_DIRECT)
+        labels = [rest[0] for kind, *rest in m.history_detail_lines(row) if kind == "item"]
+        self.assertNotIn("Verdünnungsfaktor", labels)
+
+    def test_csv_table_uses_decimal_comma(self):
+        table = m.history_csv_table([self.ROW])
+        header, data = table
+        self.assertEqual(data[header.index("actual_alcohol")], "51,5")
+        self.assertEqual(data[header.index("id")], "3")
+        self.assertEqual(data[header.index("spindle_density_20C")], "")
+        self.assertEqual(m.history_csv_table([]), [])

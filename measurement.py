@@ -359,3 +359,112 @@ def format_report(result):
             parts.append(("! " if level == LEVEL_WARNING else "i ") + text)
     parts += ["", f"Zeitstempel: {datetime.fromisoformat(result['timestamp']).strftime('%d.%m.%Y %H:%M:%S')}", ""]
     return "\n".join(parts)
+
+
+# --- Messhistorie: Darstellung der gespeicherten Messungen (Zeilen aus db.MeasurementDB.fetch_all) ---
+
+MODE_LABELS = {MODE_DILUTED: "Verdünnt", MODE_DIRECT: "Direkt"}
+
+# (Schlüssel, Spaltenüberschrift, Breite in Pixel)
+HISTORY_COLUMNS = (
+    ("timestamp", "Zeit", 135),
+    ("sample_name", "Probe", 115),
+    ("batch", "Charge", 80),
+    ("mode", "Modus", 80),
+    ("actual_alcohol", "Alkohol %vol", 125),
+    ("actual_density", "Dichte g/cm³", 125),
+    ("actual_extract", "Extrakt g/100ml", 150),
+    ("spindle", "Spindel %vol", 125),
+    ("spindle_dev", "Δ Spindel", 95),
+    ("lab", "Labor %vol", 110),
+    ("lab_dev", "Δ Labor", 90),
+)
+
+
+def _fmt(value, decimals):
+    return "–" if value is None else format_de(value, decimals)
+
+
+def _fmt_signed(value, decimals):
+    return "–" if value is None else _signed(value, decimals)
+
+
+def _fmt_time(timestamp):
+    try:
+        return datetime.fromisoformat(timestamp).strftime("%d.%m.%Y %H:%M")
+    except (TypeError, ValueError):
+        return timestamp or "–"
+
+
+def _deviation(calculated, reference):
+    return None if calculated is None or reference is None else calculated - reference
+
+
+def history_table_values(row):
+    """Werte einer Messung für die Übersichtstabelle (Reihenfolge wie HISTORY_COLUMNS)."""
+    return (
+        _fmt_time(row.get("timestamp")),
+        row.get("sample_name") or "–",
+        row.get("batch") or "–",
+        MODE_LABELS.get(row.get("mode"), "–"),
+        _fmt(row.get("actual_alcohol"), 2),
+        _fmt(row.get("actual_density"), 5),
+        _fmt(row.get("actual_extract"), 2),
+        _fmt(row.get("spindle_alcohol"), 2),
+        _fmt_signed(_deviation(row.get("actual_alcohol"), row.get("spindle_alcohol")), 2),
+        _fmt(row.get("lab_alcohol"), 2),
+        _fmt_signed(_deviation(row.get("actual_alcohol"), row.get("lab_alcohol")), 2),
+    )
+
+
+def history_detail_lines(row):
+    """Detailansicht einer Messung als Liste aus ('head', Titel) und ('item', Bezeichnung, Wert)."""
+    water_unit = "g" if row.get("water_mode") == WATER_BY_MASS else "ml"
+    lines = [("head", "Ansatz")]
+    lines += [
+        ("item", "Modus", MODE_LABELS.get(row.get("mode"), "– (ältere Messung)")),
+        ("item", "Raumtemperatur", _fmt(row.get("room_temp"), 1) + " °C"),
+    ]
+    if row.get("mode") != MODE_DIRECT:
+        lines += [
+            ("item", "Probe (eingegeben)", _fmt(row.get("probe_volume_input"), 2) + " ml"),
+            ("item", "Wasser (eingegeben)", _fmt(row.get("water_input"), 2) + " " + water_unit),
+            ("item", "Volumen bei 20 °C",
+             f"{_fmt(row.get('probe_volume'), 2)} / {_fmt(row.get('water_volume'), 2)} ml"),
+            ("item", "Verdünnungsfaktor", "1:" + _fmt(row.get("dilution_factor"), 3)),
+            ("item", "Wirksamer Faktor", "1:" + _fmt(row.get("effective_dilution_factor"), 3)),
+        ]
+    lines += [("head", "Alex 501 gemessen"),
+              ("item", "Alkohol", _fmt(row.get("measured_alcohol"), 2) + " %vol"),
+              ("item", "Dichte", _fmt(row.get("measured_density"), 5) + " g/cm³"),
+              ("item", "Extrakt", _fmt(row.get("measured_extract"), 2) + " g/100ml"),
+              ("head", "Ergebnis" + (" (Originalprobe)" if row.get("mode") != MODE_DIRECT else "")),
+              ("item", "Alkohol", _fmt(row.get("actual_alcohol"), 2) + " %vol"),
+              ("item", "Dichte", _fmt(row.get("actual_density"), 5) + " g/cm³"),
+              ("item", "Extrakt", _fmt(row.get("actual_extract"), 2) + " g/100ml"),
+              ("item", "Kalibrierkurve", "angewendet" if row.get("calibration_applied") else "nicht angewendet")]
+    if any(row.get(k) is not None for k in ("spindle_alcohol", "spindle_density_at_temp")):
+        lines += [("head", "Spindelung"),
+                  ("item", "Alkohol", _fmt(row.get("spindle_alcohol"), 2) + " %vol"),
+                  ("item", "Dichte (T / 20 °C)",
+                   f"{_fmt(row.get('spindle_density_at_temp'), 5)} / {_fmt(row.get('spindle_density_20C'), 5)}")]
+    if any(row.get(k) is not None for k in ("lab_alcohol", "lab_density", "lab_extract")) or row.get("lab_note"):
+        lines += [("head", "Laboranalyse"),
+                  ("item", "Alkohol", _fmt(row.get("lab_alcohol"), 2) + " %vol"),
+                  ("item", "Dichte", _fmt(row.get("lab_density"), 5) + " g/cm³"),
+                  ("item", "Extrakt", _fmt(row.get("lab_extract"), 2) + " g/100ml")]
+        if row.get("lab_note"):
+            lines.append(("item", "Bemerkung", row["lab_note"]))
+    return lines
+
+
+def history_csv_table(rows):
+    """Tabelle (Kopfzeile + Zeilen) aller gespeicherten Spalten für den CSV-Export; Zahlen mit Dezimalkomma."""
+    if not rows:
+        return []
+    keys = list(rows[0].keys())
+    table = [keys]
+    for row in rows:
+        table.append(["" if row.get(k) is None else (str(row[k]).replace(".", ",") if isinstance(row[k], float)
+                                                    else str(row[k])) for k in keys])
+    return table
