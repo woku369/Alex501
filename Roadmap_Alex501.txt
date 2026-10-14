@@ -5,7 +5,9 @@
 - Kalibrierkurve (linear, mit Diagramm, Speichern/Laden)
 - Temperaturkorrektur für Volumen und Spindeldichte
 - Messdatenbank (SQLite)
-- Messhistorie & Export
+- Messhistorie als eigener Tab (Suche, Details, nachträgliche Laborwerte) und Export (JSON/TXT, CSV)
+- Modus „Direkt gemessen“ (ohne Verdünnung) und Verdünnungsplaner
+- Vergleich mit Spindelung und Laborwerten
 - Info- und Berechnungslogik-Tab
 
 ---
@@ -13,11 +15,13 @@
 ## Version 1.1
 - Erweiterte Kalibrierung (polynomisch, spline)
 - Mehrere Kalibrierprofile
-- Extraktkorrektur für Alkohol und Dichte aus Referenzdaten (Mazerat verdünnt am Alex 501
-  gemessen, dazu Destillat und Spindel), sobald belegte Extraktwerte vorliegen
-  (bekannte Grenze, siehe Berechnungslogik_Alex501.txt, Punkt 6)
+- Extraktkorrektur für Alkohol und Dichte je Messung aus dem gemessenen Extrakt (ein Parameter,
+  das partielle spezifische Volumen des Extrakts), sobald belegte Extraktwerte der Mazerate
+  vorliegen (bekannte Grenze, siehe Berechnungslogik_Alex501.txt, Punkt 6). Laborwerte gibt es
+  nur gelegentlich (vor allem für das GFKC); sie dienen zur Festlegung des Parameters und als
+  Gegenprobe der ganzen Messkette (GFKC aus den Einzelwerten der Rezeptur vorausberechnen).
 - Verbesserte Fehler- und Hinweisdialoge
-- Export/Import von Messdaten (CSV, Excel)
+- Import von Messdaten (CSV, Excel), Excel-Export
 
 ## Version 1.2
 - Direkte Geräteschnittstelle (RS232, USB, TCP/IP)
@@ -27,7 +31,7 @@
 
 ## Version 1.3
 - Erweiterte Datenbankfunktionen
-  - Filter- und Suchfunktionen
+  - Erweiterte Filter (Zeitraum, Modus, Abweichungen); einfache Suche nach Probe/Charge ist vorhanden
   - Serien- und Chargenverwaltung
   - PDF-Report mit Grafiken und Ergebnissen
 
