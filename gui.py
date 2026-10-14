@@ -73,7 +73,7 @@ class Alex501App:
             "Hintergrund:\n"
             "Das Alex 501 Gerät kann nur bis max. 47 %vol. messen. Proben mit höherem Alkoholgehalt müssen verdünnt werden. Diese App rechnet die Messwerte der verdünnten Probe auf die tatsächlichen Werte der Originalprobe um.\n\n"
             "Verwendete Daten:\n"
-            "- Ethanol-Wasser-Dichte-Tabellen nach OIML R 22 / DIN 12354\n"
+            "- Alkoholtabelle CRA 1996 (berechnet aus OIML R 22), Dichte bei 20 °C\n"
             "- Berücksichtigung der Volumenkontraktion bei Ethanol-Wasser-Mischungen\n\n"
             "Wichtig:\n"
             "Die Berechnung berücksichtigt die nicht-linearen Beziehungen zwischen Alkoholgehalt, Dichte und Volumen. Für höchste Präzision wird eine Kalibrierung mit Ihrer spezifischen Probematrix empfohlen.\n\n"
@@ -587,7 +587,7 @@ Eingabewerte:
             if can_calculate_dilution:
                 results += f"""\nHinweise:
 - Die Berechnung berücksichtigt Volumenkontraktion
-- Dichte-Werte basieren auf OIML R 22 Standardtabellen
+- Dichte-Werte basieren auf der Alkoholtabelle CRA 1996 (nach OIML R 22)
 - Für höchste Präzision wird eine Kalibrierung empfohlen
 {f'- Spindelung (Aräometer) ist die Referenzmethode für Zollamt' if spindle_alc else ''}
 """

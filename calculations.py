@@ -7,6 +7,8 @@ sind dadurch unabhängig testbar (siehe tests/test_calculations.py).
 
 import numpy as np
 
+from alkoholtabelle import DICHTE_SCHRITT, DICHTE_START, VOL_PROZENT
+
 
 def format_de(value, decimals=2):
     """Formatiert Zahlen mit deutschem Komma."""
@@ -29,15 +31,47 @@ def water_density_temp(temp):
     return 0.99987 - 0.00007 * (temp - 4) - 0.0000002 * (temp - 4) ** 2
 
 
-# Werte aus OIML R 22 Tabelle (stark vereinfacht, für Demo)
-# alc in %vol, density in g/cm³
-_ALCOHOL_TABLE = np.array([0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
-_DENSITY_TABLE = np.array([0.9982, 0.9920, 0.9837, 0.9742, 0.9636, 0.9518, 0.9389, 0.9248, 0.9096, 0.8932, 0.8757])
+# Alkoholtabelle (Canadian Alcoholometric Laboratory Table 1996, berechnet aus der
+# OIML-R-22-Formel), siehe alkoholtabelle.py. Dort steht die Dichte in Luft.
+# Umrechnung auf die wahre Dichte (Vakuum, wie sie ein Biegeschwinger-Dichtemessgerät
+# anzeigt) mit den konventionellen Werten: Luft 0,0012 g/cm³, Gewichte 8,0 g/cm³.
+_AIR_DENSITY = 0.0012
+_WEIGHT_DENSITY = 8.0
+_EXTRAPOLATION_POINTS = 50  # Tabellenzeilen für die lineare Extrapolation an den Rändern
+
+# Aufsteigend nach Alkoholgehalt sortiert (Tabelle läuft nach Dichte aufsteigend).
+_ALCOHOL_TABLE = np.array(VOL_PROZENT[::-1])
+_DENSITY_AIR_TABLE = (DICHTE_START + DICHTE_SCHRITT * np.arange(len(VOL_PROZENT)))[::-1]
+
+
+def density_in_air_to_true(density_air):
+    """Rechnet die scheinbare Dichte in Luft (gegen 8,0-g/cm³-Gewichte) in die wahre
+    Dichte (Vakuum) um: rho = (rho_Luft + rho_a) / (1 + rho_a / rho_Gewicht)."""
+    return (density_air + _AIR_DENSITY) / (1 + _AIR_DENSITY / _WEIGHT_DENSITY)
+
+
+def _edge_fit(x, y):
+    """Geradenanpassung (Steigung, Achsenabschnitt) über die Randzeilen der Tabelle."""
+    return np.polyfit(x, y, 1)
+
+
+_LOW_FIT = _edge_fit(_ALCOHOL_TABLE[:_EXTRAPOLATION_POINTS], _DENSITY_AIR_TABLE[:_EXTRAPOLATION_POINTS])
+_HIGH_FIT = _edge_fit(_ALCOHOL_TABLE[-_EXTRAPOLATION_POINTS:], _DENSITY_AIR_TABLE[-_EXTRAPOLATION_POINTS:])
 
 
 def interpolate_density_from_alcohol(alc):
-    """Interpoliert die Dichte einer Ethanol-Wasser-Mischung bei 20°C anhand des Alkoholgehalts."""
-    return float(np.interp(alc, _ALCOHOL_TABLE, _DENSITY_TABLE))
+    """Interpoliert die wahre Dichte (g/cm³) einer Ethanol-Wasser-Mischung bei 20°C anhand des
+    Alkoholgehalts (%vol). Zwischen 0,03 und 99,99 %vol linear aus der Tabelle, an den
+    Rändern (0 bis 0,03 und 99,99 bis 100 %vol) linear extrapoliert. Werte außerhalb
+    0 bis 100 %vol werden auf diesen Bereich begrenzt."""
+    alc = min(max(float(alc), 0.0), 100.0)
+    if alc < _ALCOHOL_TABLE[0]:
+        density_air = np.polyval(_LOW_FIT, alc)
+    elif alc > _ALCOHOL_TABLE[-1]:
+        density_air = np.polyval(_HIGH_FIT, alc)
+    else:
+        density_air = np.interp(alc, _ALCOHOL_TABLE, _DENSITY_AIR_TABLE)
+    return float(density_in_air_to_true(density_air))
 
 
 def correct_density_to_20C(density_at_temp, temp, alc_percent):

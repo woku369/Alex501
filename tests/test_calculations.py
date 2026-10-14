@@ -42,16 +42,28 @@ class TestWaterDensity(unittest.TestCase):
 
 
 class TestDensityInterpolation(unittest.TestCase):
-    def test_table_endpoints(self):
-        self.assertAlmostEqual(calc.interpolate_density_from_alcohol(0), 0.9982)
-        self.assertAlmostEqual(calc.interpolate_density_from_alcohol(100), 0.8757)
+    def test_pure_water_and_pure_ethanol(self):
+        # Literaturwerte bei 20 °C (wahre Dichte): Wasser 0,998203, Ethanol 0,789239 g/cm³
+        # (Ethanol: Canadian Alcoholometric Tables 1980, 789,2391233 kg/m³)
+        self.assertAlmostEqual(calc.interpolate_density_from_alcohol(0), 0.998203, delta=1e-4)
+        self.assertAlmostEqual(calc.interpolate_density_from_alcohol(100), 0.789239, delta=1e-4)
 
-    def test_table_midpoint(self):
-        self.assertAlmostEqual(calc.interpolate_density_from_alcohol(50), 0.9518)
+    def test_table_row_is_reproduced(self):
+        # Tabellenzeile der CRA-Tabelle: 0,9725 g/cm³ (Dichte in Luft) entsprechen 20,00 %vol
+        self.assertAlmostEqual(calc.interpolate_density_from_alcohol(20.0),
+                               calc.density_in_air_to_true(0.9725), places=4)
 
-    def test_linear_interpolation_between_points(self):
-        # Zwischen 0 %vol (0,9982) und 10 %vol (0,9920) linear interpoliert
-        self.assertAlmostEqual(calc.interpolate_density_from_alcohol(5), 0.9951, places=4)
+    def test_air_to_true_density_conversion_for_ethanol(self):
+        # Dichte in Luft von absolutem Ethanol laut CRA-Tabelle 1996: 0,7881589894 g/cm³
+        self.assertAlmostEqual(calc.density_in_air_to_true(0.7881589894), 0.789239, delta=1e-5)
+
+    def test_density_decreases_strictly_with_alcohol(self):
+        values = [calc.interpolate_density_from_alcohol(a / 10) for a in range(0, 1001)]
+        self.assertTrue(all(x > y for x, y in zip(values, values[1:])))
+
+    def test_values_outside_range_are_clamped(self):
+        self.assertEqual(calc.interpolate_density_from_alcohol(-5), calc.interpolate_density_from_alcohol(0))
+        self.assertEqual(calc.interpolate_density_from_alcohol(120), calc.interpolate_density_from_alcohol(100))
 
 
 class TestDensityTemperatureCorrection(unittest.TestCase):
@@ -95,8 +107,8 @@ class TestDilutionCalculations(unittest.TestCase):
     def test_actual_density(self):
         actual_density, expected_density_original = calc.compute_actual_density(
             measured_alc=40, measured_dens=0.97, actual_alcohol_percent=60, dilution_factor=2.0)
-        self.assertAlmostEqual(expected_density_original, 0.9389)
-        self.assertAlmostEqual(actual_density, 0.9517, places=4)
+        self.assertAlmostEqual(expected_density_original, 0.9091, places=4)
+        self.assertAlmostEqual(actual_density, 0.9530, places=4)
 
     def test_actual_extract(self):
         self.assertAlmostEqual(calc.compute_actual_extract(5, 2), 10.0)

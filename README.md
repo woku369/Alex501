@@ -9,7 +9,7 @@ Das Alex 501 Gerät von Anton Paar kann nur bis maximal 47 %vol. Alkoholgehalt m
 ## Features
 
 - ✅ Berechnung des tatsächlichen Alkoholgehalts unter Berücksichtigung der Volumenkontraktion
-- ✅ Berechnung der tatsächlichen Dichte basierend auf OIML R 22 / DIN 12354 Standardtabellen
+- ✅ Berechnung der tatsächlichen Dichte basierend auf der Alkoholtabelle (Canadian Alcoholometric Laboratory Table 1996, berechnet aus der OIML-R-22-Formel)
 - ✅ Berechnung des tatsächlichen Extraktgehalts
 - ✅ Intuitive grafische Benutzeroberfläche
 - ✅ Export der Ergebnisse (JSON/TXT)
@@ -71,7 +71,7 @@ Beim Mischen von Ethanol und Wasser tritt eine Volumenkontraktion auf:
 - Bei 50:50 Mischung ca. 3-4% Volumenreduktion
 
 ### Dichte-Interpolation
-Die App verwendet standardisierte Ethanol-Wasser-Dichte-Tabellen (OIML R 22) mit linearer Interpolation für Zwischenwerte.
+Die App verwendet die Ethanol-Wasser-Alkoholtabelle bei 20 °C (Canadian Alcoholometric Laboratory Table 1996, 2090 Zeilen, berechnet aus der OIML-R-22-Formel; siehe `alkoholtabelle.py`) mit linearer Interpolation für Zwischenwerte. Die Tabelle gibt die Dichte in Luft an; die App rechnet sie mit dem Luftauftrieb (Luft 0,0012 g/cm³, Gewichte 8,0 g/cm³) auf die wahre Dichte um, wie sie ein Biegeschwinger-Dichtemessgerät anzeigt.
 
 ### Extraktberechnung
 Extrakte verdünnen sich proportional zum Gesamtvolumen unter Berücksichtigung der Volumenkontraktion.

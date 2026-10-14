@@ -21,7 +21,7 @@
     Tatsächlicher_Alkoholgehalt = Kalibrierfunktion(Tatsächlicher_Alkoholgehalt)
 
 ## 3. Tatsächliche Dichte
-- **Schritt 1:** Erwartete Dichte der verdünnten Probe (OIML R 22 Tabelle)
+- **Schritt 1:** Erwartete Dichte der verdünnten Probe (Alkoholtabelle CRA 1996 nach OIML R 22, wahre Dichte bei 20 °C)
   Dichte_erwartet_verdünnt = Interpolation(Gemessener Alkoholgehalt)
 
 - **Schritt 2:** Erwartete Dichte der Originalprobe
