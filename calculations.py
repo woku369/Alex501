@@ -163,6 +163,12 @@ def compute_effective_dilution_factor(measured_alc, probe_vol, water_vol):
 def compute_actual_density(measured_alc, measured_dens, actual_alcohol_percent, dilution_factor):
     """Berechnet die tatsächliche Dichte der Originalprobe.
 
+    Die Dichte der verdünnten Probe wird in den Anteil eines reinen Ethanol-Wasser-Gemisches
+    (Alkoholtabelle) und einen Rest durch Extraktstoffe zerlegt. Der Rest ist näherungsweise
+    proportional zur Extraktkonzentration je Volumen und wird deshalb mit dem wirksamen
+    Verdünnungsfaktor (reales Volumen der Verdünnung / Probevolumen, siehe
+    compute_effective_dilution_factor) auf die Originalprobe hochgerechnet.
+
     Gibt ein Tupel (actual_density, expected_density_original) zurück, wobei
     expected_density_original der aus der OIML-Tabelle interpolierte Erwartungswert
     für den berechneten Alkoholgehalt ist (wird separat für den Spindelvergleich

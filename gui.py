@@ -460,7 +460,7 @@ class Alex501App:
                 # Dichte berechnen (falls Alkohol und Dichte vorhanden)
                 if measured_alc is not None and measured_dens is not None and actual_alcohol_percent is not None:
                     actual_density, expected_density_original = compute_actual_density(
-                        measured_alc, measured_dens, actual_alcohol_percent, dilution_factor)
+                        measured_alc, measured_dens, actual_alcohol_percent, effective_dilution_factor)
 
                 # Extrakt berechnen (falls vorhanden)
                 if measured_ext is not None:

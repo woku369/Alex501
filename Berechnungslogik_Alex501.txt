@@ -38,7 +38,10 @@ Deshalb wird über die Ethanolmasse bilanziert, nicht über Volumina.
 
 - **Schritt 3:** Korrektur um Differenz
   Dichte_Differenz = Gemessene Dichte - Dichte_erwartet_verdünnt
-  Tatsächliche_Dichte = Dichte_erwartet_original + Dichte_Differenz * (Verdünnungsfaktor)
+  Tatsächliche_Dichte = Dichte_erwartet_original + Dichte_Differenz * (Wirksamer Faktor)
+  (Die Differenz stammt von den Extraktstoffen und ist näherungsweise proportional zur
+  Extraktkonzentration je Volumen; Näherung erster Ordnung. Bei einer Probe ohne Extrakt ist
+  die Differenz 0 und das Ergebnis gleich der Tabellendichte.)
 
 ## 4. Tatsächlicher Extraktgehalt
 - **Formel:**

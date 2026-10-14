@@ -149,6 +149,17 @@ class TestDilutionCalculations(unittest.TestCase):
         self.assertAlmostEqual(expected_density_original, 0.9091, places=4)
         self.assertAlmostEqual(actual_density, 0.9530, places=4)
 
+    def test_actual_density_without_extract_equals_table_density(self):
+        # Verdünnung ohne Extraktstoffe: gemessene Dichte = Tabellendichte -> keine Differenz,
+        # das Ergebnis ist unabhängig vom Verdünnungsfaktor die Tabellendichte der Originalprobe
+        measured_alc = 40
+        measured_dens = calc.interpolate_density_from_alcohol(measured_alc)
+        actual_alc = calc.compute_actual_alcohol(measured_alc, 10, 10)
+        factor = calc.compute_effective_dilution_factor(measured_alc, 10, 10)
+        actual_density, expected = calc.compute_actual_density(measured_alc, measured_dens, actual_alc, factor)
+        self.assertAlmostEqual(actual_density, expected, places=9)
+        self.assertAlmostEqual(actual_density, calc.interpolate_density_from_alcohol(actual_alc), places=9)
+
     def test_actual_extract(self):
         self.assertAlmostEqual(calc.compute_actual_extract(5, 2), 10.0)
 
