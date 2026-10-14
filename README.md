@@ -13,7 +13,10 @@ Das Alex 501 Gerät von Anton Paar kann nur bis maximal 47 %vol. Alkoholgehalt m
 - ✅ Berechnung des tatsächlichen Extraktgehalts
 - ✅ Intuitive grafische Benutzeroberfläche
 - ✅ Export der Ergebnisse (JSON/TXT)
-- 🔄 Kalibrierungsmodus (in Entwicklung)
+- ✅ Lineare Kalibrierkurve (Referenz-/Messwert-Paare, Diagramm, Speichern/Laden)
+- ✅ Temperaturkorrektur für Probe-/Wasservolumen und Spindeldichte (Referenz 20 °C)
+- ✅ Messhistorie in SQLite mit automatischem Backup
+- 🔄 Erweiterte Kalibrierung (Verdünnungsreihen, Polynom/Spline) – in Entwicklung
 
 ## Installation
 
@@ -68,7 +71,7 @@ Beim Mischen von Ethanol und Wasser tritt eine Volumenkontraktion auf:
 - Bei 50:50 Mischung ca. 3-4% Volumenreduktion
 
 ### Dichte-Interpolation
-Die App verwendet standardisierte Ethanol-Wasser-Dichte-Tabellen (OIML R 22) mit kubischer Interpolation für Zwischenwerte.
+Die App verwendet standardisierte Ethanol-Wasser-Dichte-Tabellen (OIML R 22) mit linearer Interpolation für Zwischenwerte.
 
 ### Extraktberechnung
 Extrakte verdünnen sich proportional zum Gesamtvolumen unter Berücksichtigung der Volumenkontraktion.
@@ -77,15 +80,14 @@ Extrakte verdünnen sich proportional zum Gesamtvolumen unter Berücksichtigung 
 
 ⚠️ **Genauigkeit**: Die Berechnungen basieren auf Standardkurven für reine Ethanol-Wasser-Gemische. Mazerate enthalten zusätzliche Inhaltsstoffe (Kräuterextrakte), die die Eigenschaften beeinflussen können.
 
-💡 **Empfehlung**: Für höchste Präzision führen Sie eine Verdünnungsreihe mit einer Referenzprobe bekannter Werte durch und nutzen Sie den Kalibrierungsmodus (in Entwicklung).
+💡 **Empfehlung**: Für höchste Präzision führen Sie eine Verdünnungsreihe mit einer Referenzprobe bekannter Werte durch und nutzen Sie die Kalibrierkurve (linear; erweiterte Kalibrierung in Entwicklung).
 
 ## Zukünftige Erweiterungen
 
-- [ ] Vollständiger Kalibrierungsmodus mit Verdünnungsreihen
-- [ ] Visualisierung der Kalibrierkurven
+- [ ] Erweiterte Kalibrierung mit Verdünnungsreihen (Polynom/Spline, mehrere Profile)
 - [ ] Datenbank für Messserien
 - [ ] PDF-Export mit Grafiken
-- [ ] Temperaturkorrektur
+- [ ] Temperaturkorrektur für alle Messwerte (bisher nur Volumen und Spindeldichte)
 
 ## Support
 

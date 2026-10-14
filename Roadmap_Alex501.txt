@@ -2,7 +2,8 @@
 
 ## Version 1.0 (aktuell)
 - Interpolation & Analyse verdünnter Proben
-- Kalibrierkurve (linear)
+- Kalibrierkurve (linear, mit Diagramm, Speichern/Laden)
+- Temperaturkorrektur für Volumen und Spindeldichte
 - Messdatenbank (SQLite)
 - Messhistorie & Export
 - Info- und Berechnungslogik-Tab
@@ -44,7 +45,7 @@
 ---
 
 ## Weitere Ideen
-- Temperaturkorrektur für alle Werte
+- Temperaturkorrektur für alle Messwerte (bisher nur Volumen und Spindeldichte)
 - Automatische Updates
 - Erweiterung für andere Messgeräte
 - API für externe Anwendungen
