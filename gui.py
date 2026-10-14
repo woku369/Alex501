@@ -287,7 +287,7 @@ class Alex501App:
             sample_name = self.sample_name.get().strip()
             batch = self.batch_field.get().strip()
 
-            ignored_fields = []  # Felder mit ungueltiger Eingabe, die ignoriert wurden
+            ignored_fields = []  # Felder mit ungültiger Eingabe, die ignoriert wurden
             range_warnings = []  # Felder mit physikalisch unplausiblem Wert (werden trotzdem verwendet)
 
             def check_range(value, lo, hi, label, inclusive_lo=True):
@@ -339,7 +339,7 @@ class Alex501App:
                 if self.measured_density.get().strip():
                     measured_dens = float(self.measured_density.get().replace(',', '.'))
                     # Bereich deckt sowohl reine Ethanol-Wasser-Proben als auch
-                    # zuckerhaltige Likoere ab, deren Dichte bis ca. 1,35 g/cm³ reichen kann
+                    # zuckerhaltige Liköre ab, deren Dichte bis ca. 1,35 g/cm³ reichen kann
                     check_range(measured_dens, 0.70, 1.40, "Gemessene Dichte [g/cm³]")
             except ValueError:
                 ignored_fields.append("Gemessene Dichte")
@@ -393,12 +393,12 @@ class Alex501App:
                         return
                     spindle_dens_20C = correct_density_to_20C(spindle_dens_at_temp, room_temp, spindle_alc)
                     # Bereich deckt sowohl reine Ethanol-Wasser-Proben als auch
-                    # zuckerhaltige Likoere ab, deren Dichte bis ca. 1,35 g/cm³ reichen kann
+                    # zuckerhaltige Liköre ab, deren Dichte bis ca. 1,35 g/cm³ reichen kann
                     check_range(spindle_dens_at_temp, 0.70, 1.40, "Spindelwert Dichte [g/cm³]")
                 except ValueError:
                     ignored_fields.append("Spindelwert Dichte")
 
-            # Hinweis anzeigen, falls Eingaben ungueltig waren und ignoriert wurden oder
+            # Hinweis anzeigen, falls Eingaben ungültig waren und ignoriert wurden oder
             # physikalisch unplausible Werte erkannt wurden (letztere werden trotzdem verwendet)
             if ignored_fields or range_warnings:
                 message = ""

@@ -1,7 +1,7 @@
 """
-Unit-Tests fuer die reinen Berechnungsfunktionen in calculations.py.
+Unit-Tests für die reinen Berechnungsfunktionen in calculations.py.
 
-Ausfuehren mit:
+Ausführen mit:
     python -m unittest discover -s tests
 """
 
@@ -28,7 +28,7 @@ class TestVolumeTemperatureCorrection(unittest.TestCase):
         self.assertAlmostEqual(calc.correct_volume_temp(100, 20.0, is_water=True), 100.0)
 
     def test_volume_shrinks_when_correcting_down_from_warmer_temperature(self):
-        # Bei einer Probe, die waermer als 20 C war, nimmt das Volumen bei
+        # Bei einer Probe, die wärmer als 20 C war, nimmt das Volumen bei
         # Korrektur auf 20 C ab (das warme Volumen war ausgedehnt).
         corrected = calc.correct_volume_temp(100, 30, is_water=False)
         self.assertLess(corrected, 100)
@@ -37,7 +37,7 @@ class TestVolumeTemperatureCorrection(unittest.TestCase):
 
 class TestWaterDensity(unittest.TestCase):
     def test_density_at_4_degrees(self):
-        # Bei 4 C faellt der quadratische/lineare Korrekturterm weg
+        # Bei 4 C fällt der quadratische/lineare Korrekturterm weg
         self.assertAlmostEqual(calc.water_density_temp(4), 0.99987)
 
 
@@ -59,8 +59,8 @@ class TestDensityTemperatureCorrection(unittest.TestCase):
         self.assertAlmostEqual(calc.correct_density_to_20C(0.95, 20.0, 40), 0.95)
 
     def test_correction_direction_above_reference_temperature(self):
-        # Bei hoeherer Temperatur ist die gemessene Dichte niedriger als bei 20 C,
-        # die Korrektur auf 20 C muss die Dichte daher erhoehen.
+        # Bei höherer Temperatur ist die gemessene Dichte niedriger als bei 20 C,
+        # die Korrektur auf 20 C muss die Dichte daher erhöhen.
         corrected = calc.correct_density_to_20C(0.95, 25.0, 40)
         self.assertGreater(corrected, 0.95)
 
@@ -88,7 +88,7 @@ class TestDilutionCalculations(unittest.TestCase):
         self.assertAlmostEqual(calc.compute_dilution_factor(25, 75), 4.0)
 
     def test_actual_alcohol(self):
-        # 40 %vol in 20 ml Gesamtvolumen (10 ml Probe + 10 ml Wasser) zurueckgerechnet
+        # 40 %vol in 20 ml Gesamtvolumen (10 ml Probe + 10 ml Wasser) zurückgerechnet
         # auf 10 ml Probevolumen ergibt 80 %vol (vor Kontraktionskorrektur).
         self.assertAlmostEqual(calc.compute_actual_alcohol(40, 10, 20), 80.0)
 

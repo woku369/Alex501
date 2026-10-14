@@ -1,8 +1,8 @@
 """
-Reine Berechnungsfunktionen fuer die Alex 501 Mazerat-Interpolation.
+Reine Berechnungsfunktionen für die Alex 501 Mazerat-Interpolation.
 
-Diese Funktionen haben keine Abhaengigkeit von tkinter oder der GUI und
-sind dadurch unabhaengig testbar (siehe tests/test_calculations.py).
+Diese Funktionen haben keine Abhängigkeit von tkinter oder der GUI und
+sind dadurch unabhängig testbar (siehe tests/test_calculations.py).
 """
 
 import numpy as np
@@ -54,7 +54,7 @@ def correct_density_to_20C(density_at_temp, temp, alc_percent):
 
 
 def apply_contraction_correction(alcohol_percent):
-    """Korrigiert den Alkoholgehalt fuer die Volumenkontraktion bei Ethanol-Wasser-
+    """Korrigiert den Alkoholgehalt für die Volumenkontraktion bei Ethanol-Wasser-
     Mischungen oberhalb von 50 %vol."""
     if alcohol_percent > 50:
         contraction_correction = 1 + (0.001 * (alcohol_percent - 50))
@@ -64,32 +64,32 @@ def apply_contraction_correction(alcohol_percent):
 
 def apply_calibration_curve(calib_data, value):
     """Wendet eine lineare Kalibrierkurve (Paare aus Referenzwert und Messwert) auf
-    einen Wert an und gibt den korrigierten Wert zurueck."""
+    einen Wert an und gibt den korrigierten Wert zurück."""
     refs, meas = zip(*calib_data)
     coeffs = np.polyfit(meas, refs, 1)
     return float(np.polyval(coeffs, value))
 
 
 def compute_dilution_factor(probe_vol, water_vol):
-    """Berechnet den Verduennungsfaktor aus Probe- und Wasservolumen."""
+    """Berechnet den Verdünnungsfaktor aus Probe- und Wasservolumen."""
     total_diluted_volume = probe_vol + water_vol
     return total_diluted_volume / probe_vol
 
 
 def compute_actual_alcohol(measured_alc, probe_vol, total_diluted_volume):
-    """Rechnet den gemessenen Alkoholgehalt der verduennten Probe auf die
-    Originalprobe zurueck (vor Volumenkontraktions-Korrektur und Kalibrierung)."""
+    """Rechnet den gemessenen Alkoholgehalt der verdünnten Probe auf die
+    Originalprobe zurück (vor Volumenkontraktions-Korrektur und Kalibrierung)."""
     alcohol_volume_in_dilution = (measured_alc / 100) * total_diluted_volume
     return (alcohol_volume_in_dilution / probe_vol) * 100
 
 
 def compute_actual_density(measured_alc, measured_dens, actual_alcohol_percent, dilution_factor):
-    """Berechnet die tatsaechliche Dichte der Originalprobe.
+    """Berechnet die tatsächliche Dichte der Originalprobe.
 
-    Gibt ein Tupel (actual_density, expected_density_original) zurueck, wobei
+    Gibt ein Tupel (actual_density, expected_density_original) zurück, wobei
     expected_density_original der aus der OIML-Tabelle interpolierte Erwartungswert
-    fuer den berechneten Alkoholgehalt ist (wird separat fuer den Spindelvergleich
-    benoetigt).
+    für den berechneten Alkoholgehalt ist (wird separat für den Spindelvergleich
+    benötigt).
     """
     expected_density_diluted = interpolate_density_from_alcohol(measured_alc)
     expected_density_original = interpolate_density_from_alcohol(actual_alcohol_percent)
@@ -99,5 +99,5 @@ def compute_actual_density(measured_alc, measured_dens, actual_alcohol_percent, 
 
 
 def compute_actual_extract(measured_ext, dilution_factor):
-    """Berechnet den tatsaechlichen Extraktgehalt der Originalprobe."""
+    """Berechnet den tatsächlichen Extraktgehalt der Originalprobe."""
     return measured_ext * dilution_factor

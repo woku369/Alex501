@@ -1,5 +1,5 @@
 """
-SQLite-Persistenz fuer die Alex 501 Mazerat-Interpolation (Messhistorie).
+SQLite-Persistenz für die Alex 501 Mazerat-Interpolation (Messhistorie).
 """
 
 import sqlite3
@@ -19,7 +19,7 @@ class MeasurementDB:
 
     def _backup_db(self):
         """Legt bei jedem Programmstart eine zeitgestempelte Sicherungskopie der
-        Datenbank an und behaelt nur die letzten MAX_BACKUPS Kopien."""
+        Datenbank an und behält nur die letzten MAX_BACKUPS Kopien."""
         if not os.path.exists(self.db_path):
             return
         try:
@@ -30,7 +30,7 @@ class MeasurementDB:
             backup_path = os.path.join(backup_dir, f"{db_name}_backup_{timestamp}.db")
             shutil.copy2(self.db_path, backup_path)
 
-            # Alte Backups ueber dem Limit entfernen (aelteste zuerst)
+            # Alte Backups über dem Limit entfernen (älteste zuerst)
             existing_backups = sorted(glob.glob(os.path.join(backup_dir, f"{db_name}_backup_*.db")))
             for old_backup in existing_backups[:-self.MAX_BACKUPS]:
                 os.remove(old_backup)
@@ -66,8 +66,8 @@ class MeasurementDB:
             self._migrate_schema(conn)
 
     def _migrate_schema(self, conn):
-        """Ergaenzt bei einer bereits bestehenden Datenbank (aus einer aelteren
-        Version vor der Schema-Erweiterung) die fehlenden Spalten nachtraeglich."""
+        """Ergänzt bei einer bereits bestehenden Datenbank (aus einer älteren
+        Version vor der Schema-Erweiterung) die fehlenden Spalten nachträglich."""
         c = conn.cursor()
         c.execute("PRAGMA table_info(messungen)")
         existing_columns = {row[1] for row in c.fetchall()}
@@ -83,7 +83,7 @@ class MeasurementDB:
         conn.commit()
 
     def fetch_all(self):
-        """Gibt alle Messungen (neueste zuerst) mit allen gespeicherten Spalten zurueck,
+        """Gibt alle Messungen (neueste zuerst) mit allen gespeicherten Spalten zurück,
         in der gleichen Spaltenreihenfolge wie insert_measurement() + id/timestamp/sample_name/batch."""
         with sqlite3.connect(self.db_path) as conn:
             c = conn.cursor()
