@@ -50,6 +50,10 @@ node --test tests-js/parity.test.js tests-js/pwa.test.js   # Abgleich JavaScript
 ```
 Ändert sich `calculations.py`, `measurement.py` oder die Tabelle, müssen `docs/calc.js` bzw. `docs/measurement.js` nachgezogen und die Referenzwerte neu erzeugt werden; der Abgleich schlägt sonst fehl. Bei Änderungen an der Oberfläche `VERSION` in `docs/sw.js` und `APP_VERSION` in `docs/app.js` erhöhen, damit die Tablets die neuen Dateien holen. Der Browser-Test `tests-js/e2e.mjs` (Offline-Betrieb, Export/Import) braucht `playwright-core` und Chromium (siehe Kopf der Datei).
 
+## Offene Punkte (Warteschleife)
+
+Besprochene, aber noch nicht umgesetzte Themen stehen mit allen Entscheidungen und Hintergründen in [`Offene_Punkte_Alex501.md`](Offene_Punkte_Alex501.md): Einbindung in den MazerationsMeister, Korrekturanalyse Spindel ↔ Alex, Spindel-Plausibilitätscheck, Messreihen, Test der Spindelgenauigkeit, Kalibrierkurve, Extraktkorrektur, Datenhaltung Tablet ↔ PC, Zoll-Fragen. Zuerst werden die Abläufe der Probenvorbereitung und Messung im Alltag erprobt.
+
 ## Installation
 
 ### Voraussetzungen

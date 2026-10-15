@@ -59,6 +59,7 @@
 ---
 
 ## Einbindung in den MazerationsMeister (Ziel, nach Bestätigung der Ergebnisse)
+(Konzept, Entscheidungen und offene Fragen: Offene_Punkte_Alex501.md, OP-1. Weitere Warteschleife-Themen dort: OP-2 bis OP-11.)
 - Voraussetzung: zuverlässige Ergebnisse. Reihenfolge: zuerst Vergleich mit der Spindelung, danach der
   Alex-Output als Buchungsgrundlage.
 - Idee: Übergabe der Messung je Tank (Tank-Nr., Alkohol, Dichte bei 20 °C) an die Lagerverwaltung des
