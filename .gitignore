@@ -4,3 +4,4 @@ build/
 dist/
 *.db
 kalibrierkurve.json
+node_modules/

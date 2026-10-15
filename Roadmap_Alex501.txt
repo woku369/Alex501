@@ -12,6 +12,13 @@
 
 ---
 
+## Tablet-Version (PWA) - umgesetzt
+- Offline-fähige Version für das Android-Tablet im Mazerationsraum (ohne PC, ohne Netzwerk, nur mobile Daten)
+- Rechenkern nach JavaScript portiert, per Test gegen die Python-Ergebnisse abgeglichen; Messhistorie im Browser,
+  Sicherung/Import als JSON (Import in die Windows-App vorhanden)
+- Offen: Datenhaltung zwischen Tablet und PC (bisher Sicherungsdatei; Sync über ein privates Repo wäre möglich),
+  Einbindung in den MazerationsMeister (siehe unten; der JavaScript-Rechenkern ist dafür die Grundlage)
+
 ## Version 1.1
 - Erweiterte Kalibrierung (polynomisch, spline)
 - Mehrere Kalibrierprofile

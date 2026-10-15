@@ -680,6 +680,8 @@ class Alex501App:
                    command=self.edit_lab_reference).pack(side="left")
         ttk.Button(toolbar, text="Als CSV exportieren …", style="Secondary.TButton",
                    command=self.export_history_csv).pack(side="left", padx=(8, 0))
+        ttk.Button(toolbar, text="Import (Tablet) …", style="Secondary.TButton",
+                   command=self.import_history_json).pack(side="left", padx=(8, 0))
         self.history_count = ttk.Label(toolbar, text="", foreground=C["muted"])
         self.history_count.pack(side="right")
 
@@ -797,6 +799,24 @@ class Alex501App:
         ttk.Button(buttons, text="Speichern", style="Primary.TButton", command=save).pack(side="left")
         ttk.Button(buttons, text="Abbrechen", style="Secondary.TButton", command=win.destroy).pack(
             side="left", padx=(8, 0))
+
+    def import_history_json(self):
+        """Übernimmt eine Sicherung (JSON) der Tablet-Version in die Messhistorie."""
+        filename = filedialog.askopenfilename(
+            title="Sicherung der Tablet-Version auswählen",
+            filetypes=[("JSON Dateien", "*.json"), ("Alle Dateien", "*.*")])
+        if not filename:
+            return
+        try:
+            with open(filename, "r", encoding="utf-8") as handle:
+                rows = MeasurementDB.rows_from_export(json.load(handle))
+            added, skipped = self.measurement_db.import_rows(rows)
+        except (OSError, ValueError) as error:
+            messagebox.showerror("Fehler", f"Import fehlgeschlagen: {error}")
+            return
+        self.refresh_history()
+        self.set_status(f"Import: {added} Messungen hinzugefügt, {skipped} übersprungen "
+                        "(bereits vorhanden oder ungültig).")
 
     def export_history_csv(self):
         table = meas.history_csv_table(self.measurement_db.fetch_all())

@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#2e6b3f">
+  <meta name="description" content="Alex 501 Mazerat-Interpolation: Rückrechnung verdünnter Proben auf die Originalprobe (Tablet-Version)">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+  <title>Alex 501 Mazerat-Interpolation</title>
+</head>
+<body>
+  <header class="app-header">
+    <div>
+      <h1>Alex 501 Mazerat-Interpolation</h1>
+      <p>Kräuter-Meister · Rückrechnung verdünnter Proben auf die Originalprobe</p>
+    </div>
+    <span id="net-status" class="chip" role="status"></span>
+  </header>
+
+  <div id="update-banner" class="banner" hidden>
+    Neue Version geladen. <button type="button" id="update-reload" class="btn secondary">Jetzt neu laden</button>
+  </div>
+
+  <nav class="tabs" role="tablist" aria-label="Bereiche">
+    <button type="button" role="tab" data-tab="measure" aria-selected="true">Messung</button>
+    <button type="button" role="tab" data-tab="history" aria-selected="false">Messhistorie</button>
+    <button type="button" role="tab" data-tab="calib" aria-selected="false">Kalibrierkurve</button>
+    <button type="button" role="tab" data-tab="info" aria-selected="false">Information</button>
+  </nav>
+
+  <main>
+    <!-- Tab Messung: die Karten werden von app.js aufgebaut -->
+    <section id="tab-measure" class="tab active" role="tabpanel">
+      <div class="measure">
+        <div class="col col-left" id="col-left"></div>
+        <div class="col col-mid" id="col-mid"></div>
+        <div class="col results" id="results">
+          <div class="tiles" id="tiles"></div>
+          <p id="summary" class="summary muted">Noch keine Berechnung.</p>
+          <div id="messages"></div>
+          <div id="comparison"></div>
+          <div class="card">
+            <h2 class="card-title">Protokoll</h2>
+            <pre id="report" class="report" tabindex="0"></pre>
+            <div class="row">
+              <button type="button" class="btn secondary" id="copy-report">Kopieren</button>
+              <button type="button" class="btn secondary" id="save-report-txt">Als Text speichern</button>
+              <button type="button" class="btn secondary" id="save-report-json">Als JSON speichern</button>
+            </div>
+          </div>
+        </div>
+        <div class="actions" id="actions"></div>
+      </div>
+    </section>
+
+    <!-- Tab Messhistorie -->
+    <section id="tab-history" class="tab" role="tabpanel" hidden>
+      <div class="toolbar">
+        <label class="search"><span class="visually-hidden">Suchen</span>
+          <input id="history-search" type="search" placeholder="Suchen nach Probe, Charge, Tank" autocomplete="off">
+        </label>
+        <button type="button" class="btn secondary" id="lab-edit">Laborwerte zur Auswahl …</button>
+        <button type="button" class="btn secondary" id="export-csv">CSV</button>
+        <button type="button" class="btn secondary" id="export-json">Sicherung (JSON)</button>
+        <button type="button" class="btn secondary" id="import-json">Import …</button>
+        <input id="import-file" type="file" accept="application/json,.json" hidden>
+        <span id="history-count" class="muted"></span>
+      </div>
+      <p id="export-hint" class="muted small"></p>
+      <div class="table-wrap"><table id="history-table"></table></div>
+      <div class="card">
+        <h2 class="card-title">Details zur ausgewählten Messung</h2>
+        <div id="history-detail" class="detail-grid"><p class="muted">Bitte eine Messung in der Tabelle auswählen.</p></div>
+      </div>
+    </section>
+
+    <!-- Tab Kalibrierkurve -->
+    <section id="tab-calib" class="tab" role="tabpanel" hidden>
+      <div class="card">
+        <h2 class="card-title">Messwerte für die Kalibrierkurve</h2>
+        <div class="row wrap">
+          <label class="field inline"><span>Referenzwert</span><input id="calib-ref" inputmode="decimal" autocomplete="off" enterkeyhint="next"><em>%vol</em></label>
+          <label class="field inline"><span>Messwert</span><input id="calib-meas" inputmode="decimal" autocomplete="off" enterkeyhint="done"><em>%vol</em></label>
+          <button type="button" class="btn primary" id="calib-add">Punkt hinzufügen</button>
+        </div>
+      </div>
+      <div class="calib-layout">
+        <div class="card"><table id="calib-table"></table></div>
+        <div class="card"><canvas id="calib-plot" width="640" height="420" aria-label="Kalibrierkurve"></canvas></div>
+      </div>
+    </section>
+
+    <!-- Tab Information -->
+    <section id="tab-info" class="tab" role="tabpanel" hidden>
+      <div class="card" id="info-text"></div>
+      <div class="card" id="app-info"></div>
+    </section>
+  </main>
+
+  <footer id="statusbar" class="statusbar" role="status">Bereit.</footer>
+
+  <dialog id="planner-dialog" class="dialog"></dialog>
+  <dialog id="lab-dialog" class="dialog"></dialog>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

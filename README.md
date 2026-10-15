@@ -32,6 +32,24 @@ Die App unterstützt die Qualitätssicherung der Frischkräuter-Mazerate, -Desti
 - **Probenvorbereitung:** Kohlensäurehaltige Proben werden entgast, Trübungen durch Kieselgurbehandlung entfernt.
 - **Reihenfolge der Einführung:** Zunächst dient der Spindelvergleich zur Prüfung der Ergebnisse, danach der Alex-Output. Sind die Ergebnisse zuverlässig, soll die App in den MazerationsMeister eingebunden werden (siehe Roadmap).
 
+## Tablet-Version (PWA, Android)
+
+Für den Mazerationsraum ohne PC und Netzwerk gibt es eine Tablet-Version im Ordner `docs/`. Sie läuft im Browser (Chrome), nach einmaligem Laden **auch ohne Netz**, und rechnet wie die Windows-App (die JavaScript-Rechnung wird in `tests-js/` gegen die Python-Ergebnisse geprüft).
+
+- **Einrichten (einmalig):** Auf GitHub unter *Settings → Pages* den Ordner `/docs` des Branches `main` veröffentlichen. Die Adresse lautet dann vermutlich `https://woku369.github.io/Alex501/`. Am Tablet einmal mit mobilen Daten öffnen und in Chrome über das Menü *App installieren* bzw. *Zum Startbildschirm hinzufügen* wählen. Danach startet sie wie eine App und braucht kein Netz mehr.
+- **Funktionen:** Eingabe, Berechnung, Ergebnis-Kacheln, Meldungen, Verdünnungsplaner, Spindel- und Laborvergleich, Messhistorie mit Suche, Kalibrierkurve, Tank-Nr. Rechnung und Texte entsprechen der Windows-App.
+- **Daten:** Die Messungen liegen nur im Browser des Tablets (IndexedDB). Bitte regelmäßig über *Messhistorie → Sicherung (JSON)* sichern; die Datei lässt sich in der Windows-App über *Messhistorie → Import (Tablet)* übernehmen (Dubletten werden übersprungen). Wenn Browserdaten gelöscht werden, sind die Messungen weg.
+- **Updates:** Bei bestehender Verbindung lädt die App neue Versionen im Hintergrund und weist auf den Neustart hin.
+- **Öffentliches Repo:** Das Repository ist öffentlich, die Seite enthält nur den Programmcode. Messdaten gehören nicht ins Repo.
+
+### Entwicklung der Tablet-Version
+```powershell
+python tools/make_pwa_data.py      # docs/alkoholtabelle.js und docs/infotext.js aus den Python-Quellen
+python tools/make_reference.py     # Referenzwerte der Python-Rechnung für den Abgleich neu erzeugen
+node --test tests-js/parity.test.js tests-js/pwa.test.js   # Abgleich JavaScript gegen Python, Auslieferung (Version, Offline-Dateiliste)
+```
+Ändert sich `calculations.py`, `measurement.py` oder die Tabelle, müssen `docs/calc.js` bzw. `docs/measurement.js` nachgezogen und die Referenzwerte neu erzeugt werden; der Abgleich schlägt sonst fehl. Bei Änderungen an der Oberfläche `VERSION` in `docs/sw.js` und `APP_VERSION` in `docs/app.js` erhöhen, damit die Tablets die neuen Dateien holen. Der Browser-Test `tests-js/e2e.mjs` (Offline-Betrieb, Export/Import) braucht `playwright-core` und Chromium (siehe Kopf der Datei).
+
 ## Installation
 
 ### Voraussetzungen

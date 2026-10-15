@@ -160,3 +160,43 @@ class MeasurementDB:
                 (lab_alcohol, lab_density, lab_extract, lab_note or None, measurement_id))
             conn.commit()
             return cursor.rowcount > 0
+
+    @staticmethod
+    def rows_from_export(data):
+        """Liest die Zeilen aus einer Sicherung der Tablet-Version (JSON mit "rows") oder einer reinen Liste."""
+        if isinstance(data, list):
+            return data
+        if isinstance(data, dict) and data.get('format') == 'alex501-messungen' and isinstance(data.get('rows'), list):
+            return data['rows']
+        raise ValueError("Die Datei ist keine Sicherung der Alex-501-Messhistorie.")
+
+    @staticmethod
+    def _duplicate_key(row):
+        parts = (row.get('timestamp'), row.get('sample_name'), row.get('batch'), row.get('tank_nr'),
+                 row.get('actual_alcohol'))
+        return '|'.join('' if part is None else str(part) for part in parts)
+
+    def import_rows(self, rows):
+        """Übernimmt Messungen aus einer Sicherung der Tablet-Version. Bereits vorhandene Messungen
+        (gleicher Zeitstempel, Probe, Charge, Tank und Ergebnis) werden übersprungen, die ID wird neu
+        vergeben, unbekannte Spalten werden ignoriert. Gibt (hinzugefügt, übersprungen) zurück."""
+        existing = {self._duplicate_key(row) for row in self.fetch_all()}
+        added = skipped = 0
+        with sqlite3.connect(self.db_path) as conn:
+            columns = [row[1] for row in conn.execute("PRAGMA table_info(messungen)") if row[1] != 'id']
+            for source in rows:
+                if not isinstance(source, dict) or not source.get('timestamp'):
+                    skipped += 1
+                    continue
+                key = self._duplicate_key(source)
+                if key in existing:
+                    skipped += 1
+                    continue
+                existing.add(key)
+                values = {column: source[column] for column in columns if column in source}
+                names = ', '.join(values)
+                marks = ', '.join('?' for _ in values)
+                conn.execute(f"INSERT INTO messungen ({names}) VALUES ({marks})", tuple(values.values()))
+                added += 1
+            conn.commit()
+        return added, skipped

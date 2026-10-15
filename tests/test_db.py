@@ -6,6 +6,7 @@ Ausführen mit:
 """
 
 import glob
+import json
 import os
 import sqlite3
 import sys
@@ -114,6 +115,55 @@ class TestMeasurementDB(unittest.TestCase):
         # und neue Messungen funktionieren neben der alten
         db.insert_measurement(sample_result())
         self.assertEqual(len(db.fetch_all()), 2)
+
+    FIXTURE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fixtures", "pwa_export.json")
+
+    def load_fixture(self):
+        # Sicherung, erzeugt von der Tablet-Version (docs/db.js: resultToRow) – Vertrag zwischen beiden Welten
+        with open(self.FIXTURE, encoding="utf-8") as handle:
+            return json.load(handle)
+
+    def test_import_of_tablet_export(self):
+        db = MeasurementDB(self.path)
+        rows = MeasurementDB.rows_from_export(self.load_fixture())
+        self.assertEqual(db.import_rows(rows), (3, 0))
+        by_sample = {row["sample_name"]: row for row in db.fetch_all()}
+        salbei = by_sample["Salbei Mazerat"]
+        self.assertEqual(salbei["tank_nr"], "T-12")
+        self.assertEqual(salbei["mode"], "diluted")
+        self.assertAlmostEqual(salbei["actual_alcohol"], 50.14, places=2)
+        self.assertAlmostEqual(salbei["actual_density"], 0.93313, places=5)
+        self.assertEqual(salbei["water_mode"], "mass")
+        self.assertAlmostEqual(salbei["spindle_density_20C"], 0.93571, places=5)
+        self.assertEqual(by_sample["Gurktaler Mild"]["mode"], "direct")
+        self.assertIsNone(by_sample["Gurktaler Mild"]["tank_nr"])
+        self.assertAlmostEqual(by_sample["Zirbe Destillat"]["lab_alcohol"], 77.6)
+        self.assertEqual(by_sample["Zirbe Destillat"]["lab_note"], "Labor X")
+
+    def test_import_twice_creates_no_duplicates(self):
+        db = MeasurementDB(self.path)
+        rows = MeasurementDB.rows_from_export(self.load_fixture())
+        db.import_rows(rows)
+        self.assertEqual(db.import_rows(rows), (0, 3))
+        self.assertEqual(len(db.fetch_all()), 3)
+
+    def test_import_skips_invalid_rows_and_ignores_unknown_columns(self):
+        db = MeasurementDB(self.path)
+        good = {"timestamp": "2026-10-15T11:00:00", "sample_name": "X", "actual_alcohol": 50.0, "unbekannt": 1}
+        self.assertEqual(db.import_rows([good, {"sample_name": "ohne Zeit"}, "kaputt"]), (1, 2))
+        self.assertEqual(db.fetch_all()[0]["sample_name"], "X")
+
+    def test_import_gets_new_ids_next_to_existing_measurements(self):
+        db = MeasurementDB(self.path)
+        db.insert_measurement(sample_result())
+        db.import_rows(MeasurementDB.rows_from_export(self.load_fixture()))
+        ids = [row["id"] for row in db.fetch_all()]
+        self.assertEqual(sorted(ids), [1, 2, 3, 4])
+
+    def test_export_of_wrong_format_is_rejected(self):
+        with self.assertRaises(ValueError):
+            MeasurementDB.rows_from_export({"foo": "bar"})
+        self.assertEqual(MeasurementDB.rows_from_export([{"timestamp": "x"}]), [{"timestamp": "x"}])
 
     def test_backups_are_limited(self):
         MeasurementDB(self.path)
