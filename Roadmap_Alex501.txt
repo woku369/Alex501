@@ -5,19 +5,30 @@
 - Kalibrierkurve (linear, mit Diagramm, Speichern/Laden)
 - Temperaturkorrektur für Volumen und Spindeldichte
 - Messdatenbank (SQLite)
-- Messhistorie & Export
+- Messhistorie als eigener Tab (Suche, Details, nachträgliche Laborwerte) und Export (JSON/TXT, CSV)
+- Modus „Direkt gemessen“ (ohne Verdünnung) und Verdünnungsplaner
+- Vergleich mit Spindelung und Laborwerten
 - Info- und Berechnungslogik-Tab
 
 ---
 
+## Tablet-Version (PWA) - umgesetzt
+- Offline-fähige Version für das Android-Tablet im Mazerationsraum (ohne PC, ohne Netzwerk, nur mobile Daten)
+- Rechenkern nach JavaScript portiert, per Test gegen die Python-Ergebnisse abgeglichen; Messhistorie im Browser,
+  Sicherung/Import als JSON (Import in die Windows-App vorhanden)
+- Offen: Datenhaltung zwischen Tablet und PC (bisher Sicherungsdatei; Sync über ein privates Repo wäre möglich),
+  Einbindung in den MazerationsMeister (siehe unten; der JavaScript-Rechenkern ist dafür die Grundlage)
+
 ## Version 1.1
 - Erweiterte Kalibrierung (polynomisch, spline)
 - Mehrere Kalibrierprofile
-- Extraktkorrektur für Alkohol und Dichte aus Referenzdaten (Mazerat verdünnt am Alex 501
-  gemessen, dazu Destillat und Spindel), sobald belegte Extraktwerte vorliegen
-  (bekannte Grenze, siehe Berechnungslogik_Alex501.txt, Punkt 6)
+- Extraktkorrektur für Alkohol und Dichte je Messung aus dem gemessenen Extrakt (ein Parameter,
+  das partielle spezifische Volumen des Extrakts), sobald belegte Extraktwerte der Mazerate
+  vorliegen (bekannte Grenze, siehe Berechnungslogik_Alex501.txt, Punkt 6). Laborwerte gibt es
+  nur gelegentlich (vor allem für das GFKC); sie dienen zur Festlegung des Parameters und als
+  Gegenprobe der ganzen Messkette (GFKC aus den Einzelwerten der Rezeptur vorausberechnen).
 - Verbesserte Fehler- und Hinweisdialoge
-- Export/Import von Messdaten (CSV, Excel)
+- Import von Messdaten (CSV, Excel), Excel-Export
 
 ## Version 1.2
 - Direkte Geräteschnittstelle (RS232, USB, TCP/IP)
@@ -27,7 +38,7 @@
 
 ## Version 1.3
 - Erweiterte Datenbankfunktionen
-  - Filter- und Suchfunktionen
+  - Erweiterte Filter (Zeitraum, Modus, Abweichungen); einfache Suche nach Probe/Charge ist vorhanden
   - Serien- und Chargenverwaltung
   - PDF-Report mit Grafiken und Ergebnissen
 
@@ -46,6 +57,16 @@
   - Synchronisation zwischen mehreren Rechnern
 
 ---
+
+## Einbindung in den MazerationsMeister (Ziel, nach Bestätigung der Ergebnisse)
+- Voraussetzung: zuverlässige Ergebnisse. Reihenfolge: zuerst Vergleich mit der Spindelung, danach der
+  Alex-Output als Buchungsgrundlage.
+- Idee: Übergabe der Messung je Tank (Tank-Nr., Alkohol, Dichte bei 20 °C) an die Lagerverwaltung des
+  MazerationsMeisters (dort gibt es die Buchung „Inventur-Korrektur“ mit Menge, Alkohol, Dichte und
+  Liter Absolutalkohol vorher/nachher). Form der Schnittstelle (Export/Import, direkte Einbindung der
+  Berechnung) ist noch offen.
+- Mazerat: der Alex-Wert ist bei Extrakt im Modell leicht zu hoch (siehe Berechnungslogik, Punkt 6);
+  die Entscheidung, welcher Wert gebucht wird (Spindel oder Alex), ist vor der Einbindung zu treffen.
 
 ## Weitere Ideen
 - Temperaturkorrektur für alle Messwerte (bisher nur Volumen und Spindeldichte)

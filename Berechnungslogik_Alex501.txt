@@ -1,5 +1,24 @@
 # Berechnungslogik Alex501 Mazerat-Interpolation
 
+## 0. Eingaben und Modi
+- **Probenvorbereitung:** Kohlensäurehaltige Proben werden vor der Messung entgast, Trübungen durch
+  Kieselgurbehandlung entfernt (trübe Proben sind am Alex 501 nicht messbar).
+- **Zuordnung:** Tank-Nr. und Charge werden mit der Messung gespeichert (Inventur der Mazerat-Tanks,
+  Suche in der Messhistorie).
+- **Verdünnt gemessen:** Probe nach Volumen (Messkolben, bei Raumtemperatur), Wasser nach Gewicht
+  (oder Volumen). Das Probevolumen wird mit dem Ausdehnungskoeffizienten von Ethanol auf 20 °C
+  umgerechnet. Wasser nach Gewicht: Volumen bei 20 °C = Masse / Dichte(Wasser, 20 °C); Wasser nach
+  Volumen: Umrechnung mit dem Ausdehnungskoeffizienten von Wasser.
+- **Direkt gemessen (ohne Verdünnung):** für Proben im Messbereich (bis 47 %vol, z. B. Fertigprodukte).
+  Die Alex-Werte werden unverändert übernommen (Alkohol nur optional kalibriert); keine Massenbilanz.
+- **Hinweise der App:** gemessener Alkohol über 47 %vol (Messbereich des Geräts); verdünnte Probe unter
+  40 ml (Mindestmenge für eine Messung).
+- **Verdünnungsplaner:** gleiche Massenbilanz wie Punkt 2, in geschlossener Form nach der benötigten
+  Wassermenge aufgelöst: V_Wasser/V_Probe = (φ_Probe/100 * ρ_Ethanol / w_Ziel - ρ(φ_Probe)) / ρ_Wasser;
+  das reale Volumen der Verdünnung folgt aus der Gesamtmasse und ρ(φ_Ziel). Vorgegeben ist die Probemenge
+  (100 ml im Messkolben). Richtwert zum Ansetzen. Beispiel (Rechnung): 100 ml Mazerat 50 %vol -> 25,5 g Wasser,
+  ca. 125 ml verdünnt; 100 ml Destillat 78 %vol -> 98,4 g Wasser, ca. 195 ml verdünnt.
+
 ## 1. Verdünnungsfaktor
 - **Formel:**
   Verdünnungsfaktor = (Probevolumen + Wasservolumen) / Probevolumen   (Ansatz, ohne Kontraktion)
@@ -72,6 +91,21 @@ Deshalb wird über die Ethanolmasse bilanziert, nicht über Volumina.
 - **Abweichung:**
   Abweichung = Tatsächlicher_Alkoholgehalt - Spindelwert
   Abweichung_% = (Abweichung / Spindelwert) * 100
+- **Messgrenzen (Alkohol):** Grenze = Spindelgenauigkeit (±0,3 %vol, schon auf 20 °C korrigiert) +
+  Gerätegenauigkeit Alex 501 (±0,4 %vol bei 40 %vol, für alle Werte so angesetzt) * Verstärkung v.
+  v = d(berechneter Alkohol) / d(gemessener Alkohol) der Massenbilanz (ca. 1,2 bei Mazerat 50 %vol,
+  ca. 1,9 bei Destillat 78 %vol, 1 bei direkter Messung). Die App meldet, ob die Abweichung
+  innerhalb oder außerhalb der Grenzen liegt. Messkolben, Waage und Raumtemperatur (±0,1 K)
+  tragen bei diesem Ansatz weniger als 0,1 %vol bei.
+- **Spindeldichte:** (3 Nachkommastellen, nicht temperaturkorrigiert: die App korrigiert sie mit der
+  Raumtemperatur auf 20 °C) wird mit der berechneten tatsächlichen Dichte der Originalprobe verglichen
+  (früher mit der reinen Tabellendichte bei dem berechneten Alkoholgehalt; die Spindel misst aber
+  die reale Dichte einschließlich Extrakt).
+
+## 8. Laborwerte (optional)
+- Alkohol, Dichte und Extrakt aus einer Laboranalyse werden mit den berechneten Werten verglichen
+  (Abweichung = berechnet - Labor). Laborwerte können auch nachträglich zu einer gespeicherten
+  Messung eingetragen werden.
 
 ---
 Alle Formeln und Schritte sind im Quellcode dokumentiert und werden in der App automatisch ausgeführt.
