@@ -1,6 +1,10 @@
 # Berechnungslogik Alex501 Mazerat-Interpolation
 
 ## 0. Eingaben und Modi
+- **Probenvorbereitung:** Kohlensäurehaltige Proben werden vor der Messung entgast, Trübungen durch
+  Kieselgurbehandlung entfernt (trübe Proben sind am Alex 501 nicht messbar).
+- **Zuordnung:** Tank-Nr. und Charge werden mit der Messung gespeichert (Inventur der Mazerat-Tanks,
+  Suche in der Messhistorie).
 - **Verdünnt gemessen:** Probe nach Volumen (Messkolben, bei Raumtemperatur), Wasser nach Gewicht
   (oder Volumen). Das Probevolumen wird mit dem Ausdehnungskoeffizienten von Ethanol auf 20 °C
   umgerechnet. Wasser nach Gewicht: Volumen bei 20 °C = Masse / Dichte(Wasser, 20 °C); Wasser nach

@@ -48,6 +48,7 @@ class TestGuiSmoke(unittest.TestCase):
         app = self.app
         app.sample_name.set("Salbei")
         app.batch_field.set("26-01")
+        app.tank_nr.set("T-12")
         app.room_temp.set("21")
         app.probe_volume.set("36")
         app.water_value.set("9,2")
@@ -99,6 +100,7 @@ class TestGuiSmoke(unittest.TestCase):
         self.app.calculate_results()
         self.app.clear_inputs()
         self.assertEqual(self.app.sample_name.get(), "")
+        self.assertEqual(self.app.tank_nr.get(), "")
         self.assertEqual(self.app.measured_alcohol.get(), "")
         self.assertEqual(self.app.room_temp.get(), "21")
         self.assertEqual(self.app.tile_alcohol.value.cget("text"), "–")
@@ -113,6 +115,11 @@ class TestGuiSmoke(unittest.TestCase):
         self.app.history_filter.set("thym")
         self.root.update()
         self.assertEqual(len(tree.get_children()), 1)
+        self.app.history_filter.set("t-12")  # Suche nach Tank-Nr.
+        self.root.update()
+        self.assertEqual(len(tree.get_children()), 2)
+        self.app.history_filter.set("thym")
+        self.root.update()
         tree.selection_set(tree.get_children()[0])
         self.root.update()
         self.assertTrue(self.app.history_detail.winfo_children())
@@ -124,7 +131,7 @@ class TestGuiSmoke(unittest.TestCase):
         self.app.measurement_db.update_lab_reference(row_id, 51.2, None, None, "Labor X")
         self.app.refresh_history()
         values = self.app.history_tree.item(str(row_id), "values")
-        self.assertEqual(values[9], "51,20")
+        self.assertEqual(values[10], "51,20")
 
     def test_calibration_points_add_and_delete(self):
         app = self.app

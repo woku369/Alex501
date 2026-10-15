@@ -13,6 +13,8 @@ INFO_SECTIONS = [
         "Messhistorie.",
     ]),
     ("Ablauf", [
+        "0. Probenvorbereitung: Kohlensäurehaltige Proben werden entgast, Trübungen durch Kieselgurbehandlung "
+        "entfernt (trübe Proben sind nicht messbar).",
         "1. Verdünnung ansetzen: Probe nach Volumen (Messkolben), Wasser nach Gewicht. Auf etwa 40 %vol "
         "verdünnen, damit keine Trübung (Louche-Effekt) entsteht. Für eine Messung werden mindestens 40 ml "
         "verdünnte Probe benötigt. Vorgesehen sind 100 ml Probe im Messkolben und Wasser nach Gewicht; der "
@@ -21,6 +23,8 @@ INFO_SECTIONS = [
         "3. Werte, Raumtemperatur und die tatsächlich angesetzten Mengen eingeben, 'Berechnen' klicken.",
         "4. Proben unter 47 %vol (z. B. Fertigprodukte) werden direkt gemessen: Modus 'Direkt gemessen', "
         "die Alex-Werte werden unverändert übernommen.",
+        "5. Tank-Nr. und Charge eintragen: Die Inventur der Mazerat-Tanks am Jahresende ordnet jede Messung "
+        "einem Tank zu; die Messhistorie lässt sich danach durchsuchen.",
     ]),
     ("Berechnungslogik", [
         "1. Volumen auf 20 °C: Das Probevolumen wird mit dem Ausdehnungskoeffizienten von Ethanol, Wasser nach "

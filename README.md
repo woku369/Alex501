@@ -22,6 +22,16 @@ Das Alex 501 Gerät von Anton Paar kann nur bis maximal 47 %vol. Alkoholgehalt m
 - ✅ Messhistorie in SQLite (eigener Tab mit Suche und Details) mit automatischem Backup vor jeder Schema-Änderung
 - 🔄 Erweiterte Kalibrierung (Verdünnungsreihen, Polynom/Spline) – in Entwicklung
 
+## Einsatz im Betrieb
+
+Die App unterstützt die Qualitätssicherung der Frischkräuter-Mazerate, -Destillate und Fertigprodukte:
+
+- **Mazerate (ca. 50 %vol):** Frisch hergestellte Mazerate werden gespindelt (Alkohol, Dichte) und in das Lager gebucht, ggf. in einen bereits belegten Tank gepoolt. Am Jahresende werden alle Tanks gespindelt und zusätzlich mit dem Alex 501 gemessen. Die App rechnet die verdünnte Probe auf den Tank zurück und vergleicht mit der Spindelung. Dafür gibt es die Tank-Nr.
+- **Destillate (ca. 75-80 %vol):** chargenrein gelagert, für die Inventur reicht eine Messung.
+- **Fertigprodukte (4-27 %vol, zuckerhaltig):** werden im Jahresverlauf gemessen, direkt am Alex 501 (Modus „Direkt gemessen“); Spindelung ist hier nicht sinnvoll.
+- **Probenvorbereitung:** Kohlensäurehaltige Proben werden entgast, Trübungen durch Kieselgurbehandlung entfernt.
+- **Reihenfolge der Einführung:** Zunächst dient der Spindelvergleich zur Prüfung der Ergebnisse, danach der Alex-Output. Sind die Ergebnisse zuverlässig, soll die App in den MazerationsMeister eingebunden werden (siehe Roadmap).
+
 ## Installation
 
 ### Voraussetzungen

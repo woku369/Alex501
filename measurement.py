@@ -61,7 +61,7 @@ def evaluate_measurement(raw, calib_data=None, use_calibration=False, now=None):
     """Prüft die Eingaben, berechnet die Werte der Originalprobe und liefert ein Ergebnis-Dict.
 
     raw: Dict mit den Feldern der Eingabemaske als Text (fehlende Schlüssel zählen als leer):
-        mode, sample_name, batch, room_temp, probe_volume, water_value, water_mode,
+        mode, sample_name, batch, tank_nr, room_temp, probe_volume, water_value, water_mode,
         measured_alcohol, measured_density, measured_extract,
         spindle_alcohol, spindle_density, lab_alcohol, lab_density, lab_extract, lab_note
     Rückgabe: Dict mit 'ok' (bool), 'messages' (Liste aus (Stufe, Text)) und, wenn 'ok' wahr ist,
@@ -95,6 +95,7 @@ def evaluate_measurement(raw, calib_data=None, use_calibration=False, now=None):
     diluted = mode == MODE_DILUTED
     sample_name = (raw.get("sample_name") or "").strip()
     batch = (raw.get("batch") or "").strip()
+    tank_nr = (raw.get("tank_nr") or "").strip()
 
     # Raumtemperatur ist Pflicht
     try:
@@ -270,6 +271,7 @@ def evaluate_measurement(raw, calib_data=None, use_calibration=False, now=None):
         "timestamp": now.isoformat(),
         "sample_name": sample_name,
         "batch": batch,
+        "tank_nr": tank_nr,
         "mode": mode,
         "input": {
             "room_temp": room_temp,
@@ -318,6 +320,7 @@ def format_report(result):
         line, "", "BERECHNUNGSERGEBNISSE", line, "",
         f"Probenbezeichnung: {result['sample_name'] or '-'}",
         f"Charge: {result['batch'] or '-'}",
+        f"Tank: {result.get('tank_nr') or '-'}",
     ]
     if result["has_calculation"]:
         parts.append("Kalibrierkurve: " + ("angewendet" if inp["calibration_applied"] else "nicht angewendet"))
@@ -409,17 +412,18 @@ MODE_LABELS = {MODE_DILUTED: "Verdünnt", MODE_DIRECT: "Direkt"}
 
 # (Schlüssel, Spaltenüberschrift, Breite in Pixel)
 HISTORY_COLUMNS = (
-    ("timestamp", "Zeit", 135),
-    ("sample_name", "Probe", 115),
-    ("batch", "Charge", 80),
-    ("mode", "Modus", 80),
+    ("timestamp", "Zeit", 130),
+    ("sample_name", "Probe", 105),
+    ("batch", "Charge", 75),
+    ("tank_nr", "Tank", 65),
+    ("mode", "Modus", 75),
     ("actual_alcohol", "Alkohol %vol", 125),
-    ("actual_density", "Dichte g/cm³", 125),
-    ("actual_extract", "Extrakt g/100ml", 150),
-    ("spindle", "Spindel %vol", 125),
-    ("spindle_dev", "Δ Spindel", 95),
-    ("lab", "Labor %vol", 110),
-    ("lab_dev", "Δ Labor", 90),
+    ("actual_density", "Dichte g/cm³", 115),
+    ("actual_extract", "Extrakt g/100ml", 140),
+    ("spindle", "Spindel %vol", 120),
+    ("spindle_dev", "Δ Spindel", 90),
+    ("lab", "Labor %vol", 105),
+    ("lab_dev", "Δ Labor", 85),
 )
 
 
@@ -448,6 +452,7 @@ def history_table_values(row):
         _fmt_time(row.get("timestamp")),
         row.get("sample_name") or "–",
         row.get("batch") or "–",
+        row.get("tank_nr") or "–",
         MODE_LABELS.get(row.get("mode"), "–"),
         _fmt(row.get("actual_alcohol"), 2),
         _fmt(row.get("actual_density"), 5),
@@ -464,6 +469,7 @@ def history_detail_lines(row):
     water_unit = "g" if row.get("water_mode") == WATER_BY_MASS else "ml"
     lines = [("head", "Ansatz")]
     lines += [
+        ("item", "Tank", row.get("tank_nr") or "–"),
         ("item", "Modus", MODE_LABELS.get(row.get("mode"), "– (ältere Messung)")),
         ("item", "Raumtemperatur", _fmt(row.get("room_temp"), 1) + " °C"),
     ]

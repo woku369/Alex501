@@ -14,6 +14,7 @@ _ADDED_COLUMNS = {
     'spindle_density_at_temp': 'REAL',
     'spindle_density_20C': 'REAL',
     'calibration_applied': 'INTEGER',
+    'tank_nr': 'TEXT',                    # Tank bzw. Lagerort (Inventur, Zuordnung zu MazerationsMeister)
     'mode': 'TEXT',                       # 'diluted' oder 'direct'
     'probe_volume_input': 'REAL',         # Probevolumen wie eingegeben (ml, bei Raumtemperatur)
     'water_input': 'REAL',                # Wasserzugabe wie eingegeben (ml oder g)
@@ -109,18 +110,19 @@ class MeasurementDB:
             c = conn.cursor()
             c.execute('''
                 INSERT INTO messungen (
-                    timestamp, sample_name, batch, mode, room_temp, probe_volume, water_volume,
+                    timestamp, sample_name, batch, tank_nr, mode, room_temp, probe_volume, water_volume,
                     probe_volume_input, water_input, water_mode,
                     measured_alcohol, measured_density, measured_extract, dilution_factor,
                     effective_dilution_factor,
                     spindle_alcohol, spindle_density_at_temp, spindle_density_20C, calibration_applied,
                     lab_alcohol, lab_density, lab_extract, lab_note,
                     actual_alcohol, actual_density, actual_extract
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 data['timestamp'],
                 data['sample_name'],
                 data['batch'],
+                data.get('tank_nr') or None,
                 data.get('mode'),
                 inp['room_temp'],
                 inp['probe_volume'],

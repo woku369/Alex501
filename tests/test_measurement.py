@@ -74,6 +74,19 @@ class TestPlanDilution(unittest.TestCase):
             calc.plan_dilution(78, 100.0, 100.0)
 
 
+class TestTankNumber(unittest.TestCase):
+    def test_tank_is_taken_over_and_trimmed(self):
+        result = run(tank_nr="  T-12 ")
+        self.assertEqual(result["tank_nr"], "T-12")
+
+    def test_tank_is_optional(self):
+        self.assertEqual(run()["tank_nr"], "")
+
+    def test_report_shows_tank(self):
+        self.assertIn("Tank: T-12", m.format_report(run(tank_nr="T-12")))
+        self.assertIn("Tank: -", m.format_report(run()))
+
+
 class TestInputValidation(unittest.TestCase):
     def test_room_temperature_is_required(self):
         result = run(room_temp="")
@@ -314,7 +327,7 @@ if __name__ == "__main__":
 
 class TestHistoryHelpers(unittest.TestCase):
     ROW = {"id": 3, "timestamp": "2026-10-14T12:00:00", "sample_name": "Salbei", "batch": "26-01",
-           "mode": m.MODE_DILUTED, "room_temp": 21.0, "probe_volume": 29.9, "water_volume": 9.2,
+           "tank_nr": "T-12", "mode": m.MODE_DILUTED, "room_temp": 21.0, "probe_volume": 29.9, "water_volume": 9.2,
            "probe_volume_input": 30.0, "water_input": 9.2, "water_mode": m.WATER_BY_MASS,
            "measured_alcohol": 40.0, "measured_density": 0.95, "measured_extract": 2.0,
            "dilution_factor": 1.31, "effective_dilution_factor": 1.29, "spindle_alcohol": 50.0,
@@ -326,16 +339,18 @@ class TestHistoryHelpers(unittest.TestCase):
         values = m.history_table_values(self.ROW)
         self.assertEqual(len(values), len(m.HISTORY_COLUMNS))
         self.assertEqual(values[0], "14.10.2026 12:00")
-        self.assertEqual(values[3], "Verdünnt")
-        self.assertEqual(values[4], "51,50")
-        self.assertEqual(values[8], "+1,50")   # Δ Spindel
-        self.assertEqual(values[10], "+0,50")  # Δ Labor
+        self.assertEqual(values[3], "T-12")
+        self.assertEqual(values[4], "Verdünnt")
+        self.assertEqual(values[5], "51,50")
+        self.assertEqual(values[9], "+1,50")   # Δ Spindel
+        self.assertEqual(values[11], "+0,50")  # Δ Labor
 
     def test_legacy_row_without_new_values_renders(self):
         legacy = {"id": 1, "timestamp": "2026-01-05T10:00:00", "sample_name": "Alt", "actual_alcohol": 78.0}
         values = m.history_table_values(legacy)
-        self.assertEqual(values[3], "–")
-        self.assertEqual(values[7], "–")
+        self.assertEqual(values[3], "–")   # Tank
+        self.assertEqual(values[4], "–")   # Modus
+        self.assertEqual(values[8], "–")   # Spindel
         self.assertTrue(m.history_detail_lines(legacy))
 
     def test_detail_lines_have_sections_and_lab_note(self):
@@ -344,6 +359,7 @@ class TestHistoryHelpers(unittest.TestCase):
         self.assertIn("Laboranalyse", heads)
         self.assertIn(("item", "Bemerkung", "Labor X"), lines)
         self.assertIn(("item", "Wasser (eingegeben)", "9,20 g"), lines)
+        self.assertIn(("item", "Tank", "T-12"), lines)
 
     def test_direct_row_has_no_dilution_section(self):
         row = dict(self.ROW, mode=m.MODE_DIRECT)

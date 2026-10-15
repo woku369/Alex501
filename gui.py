@@ -228,6 +228,7 @@ class Alex501App:
 
         self.sample_name = tk.StringVar()
         self.batch_field = tk.StringVar()
+        self.tank_nr = tk.StringVar()
         self.mode = tk.StringVar(value=meas.MODE_DILUTED)
         self.room_temp = tk.StringVar()
         self.probe_volume = tk.StringVar()
@@ -250,6 +251,7 @@ class Alex501App:
         body.columnconfigure(1, weight=1)
         self._field(body, 0, "Bezeichnung", self.sample_name, width=22)
         self._field(body, 1, "Charge", self.batch_field, width=22)
+        self._field(body, 2, "Tank-Nr.", self.tank_nr, width=22)
 
         card, body = self._card(left, "Ansatz")
         card.pack(fill="x", pady=(10, 0))
@@ -370,7 +372,7 @@ class Alex501App:
 
     def clear_inputs(self):
         """Leert die Felder für die nächste Messung; Modus, Raumtemperatur und Wassereinheit bleiben."""
-        for var in (self.sample_name, self.batch_field, self.probe_volume, self.water_value, self.measured_alcohol,
+        for var in (self.sample_name, self.batch_field, self.tank_nr, self.probe_volume, self.water_value, self.measured_alcohol,
                     self.measured_density, self.measured_extract, self.spindle_alcohol, self.spindle_density,
                     self.lab_alcohol, self.lab_density, self.lab_extract, self.lab_note):
             var.set("")
@@ -470,6 +472,7 @@ class Alex501App:
     def _collect_raw(self):
         return {
             "mode": self.mode.get(), "sample_name": self.sample_name.get(), "batch": self.batch_field.get(),
+            "tank_nr": self.tank_nr.get(),
             "room_temp": self.room_temp.get(), "probe_volume": self.probe_volume.get(),
             "water_value": self.water_value.get(), "water_mode": self.water_mode.get(),
             "measured_alcohol": self.measured_alcohol.get(), "measured_density": self.measured_density.get(),
@@ -606,7 +609,8 @@ class Alex501App:
     def _save_result(self, result):
         """Speichert die Messung in der Messhistorie; unveränderte Wiederholungen werden nicht doppelt abgelegt."""
         key = json.dumps({"input": result["input"], "output": result["output"], "mode": result["mode"],
-                          "sample": result["sample_name"], "batch": result["batch"]}, sort_keys=True, default=str)
+                          "sample": result["sample_name"], "batch": result["batch"], "tank": result["tank_nr"]},
+                         sort_keys=True, default=str)
         if key == self._last_saved_key:
             self.set_status(f"Berechnet. Unveränderte Messung, bereits in der Messhistorie (Nr. {self._last_saved_id}).")
             return
@@ -710,7 +714,7 @@ class Alex501App:
         self.history_tree.delete(*self.history_tree.get_children())
         shown = 0
         for row in rows:
-            haystack = f"{row.get('sample_name') or ''} {row.get('batch') or ''}".lower()
+            haystack = f"{row.get('sample_name') or ''} {row.get('batch') or ''} {row.get('tank_nr') or ''}".lower()
             if needle and needle not in haystack:
                 continue
             tags = ("stripe",) if shown % 2 else ()

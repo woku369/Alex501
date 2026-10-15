@@ -51,6 +51,16 @@
 
 ---
 
+## Einbindung in den MazerationsMeister (Ziel, nach Bestätigung der Ergebnisse)
+- Voraussetzung: zuverlässige Ergebnisse. Reihenfolge: zuerst Vergleich mit der Spindelung, danach der
+  Alex-Output als Buchungsgrundlage.
+- Idee: Übergabe der Messung je Tank (Tank-Nr., Alkohol, Dichte bei 20 °C) an die Lagerverwaltung des
+  MazerationsMeisters (dort gibt es die Buchung „Inventur-Korrektur“ mit Menge, Alkohol, Dichte und
+  Liter Absolutalkohol vorher/nachher). Form der Schnittstelle (Export/Import, direkte Einbindung der
+  Berechnung) ist noch offen.
+- Mazerat: der Alex-Wert ist bei Extrakt im Modell leicht zu hoch (siehe Berechnungslogik, Punkt 6);
+  die Entscheidung, welcher Wert gebucht wird (Spindel oder Alex), ist vor der Einbindung zu treffen.
+
 ## Weitere Ideen
 - Temperaturkorrektur für alle Messwerte (bisher nur Volumen und Spindeldichte)
 - Automatische Updates

@@ -24,7 +24,7 @@ NOW = datetime(2026, 10, 14, 12, 0, 0)
 def sample_result(**fields):
     raw = {"mode": m.MODE_DILUTED, "room_temp": "21", "probe_volume": "30", "water_value": "9,2",
            "water_mode": m.WATER_BY_MASS, "measured_alcohol": "40", "measured_density": "0.9500",
-           "measured_extract": "2", "sample_name": "Salbei", "batch": "26-01"}
+           "measured_extract": "2", "sample_name": "Salbei", "batch": "26-01", "tank_nr": "T-12"}
     raw.update(fields)
     return m.evaluate_measurement(raw, now=NOW)
 
@@ -41,7 +41,7 @@ class TestMeasurementDB(unittest.TestCase):
         db = MeasurementDB(self.path)
         with sqlite3.connect(self.path) as conn:
             columns = {row[1] for row in conn.execute("PRAGMA table_info(messungen)")}
-        self.assertTrue({"mode", "lab_alcohol", "probe_volume_input", "water_input", "water_mode",
+        self.assertTrue({"tank_nr", "mode", "lab_alcohol", "probe_volume_input", "water_input", "water_mode",
                          "effective_dilution_factor", "lab_note"} <= columns)
         self.assertEqual(db.fetch_all(), [])
 
@@ -52,6 +52,7 @@ class TestMeasurementDB(unittest.TestCase):
         row = db.fetch_all()[0]
         self.assertEqual(row["id"], new_id)
         self.assertEqual(row["sample_name"], "Salbei")
+        self.assertEqual(row["tank_nr"], "T-12")
         self.assertEqual(row["mode"], m.MODE_DILUTED)
         self.assertEqual(row["water_mode"], m.WATER_BY_MASS)
         self.assertAlmostEqual(row["water_input"], 9.2)
@@ -103,6 +104,7 @@ class TestMeasurementDB(unittest.TestCase):
         self.assertEqual(rows[0]["sample_name"], "Altprobe")
         self.assertAlmostEqual(rows[0]["actual_alcohol"], 78.0)
         self.assertIsNone(rows[0]["mode"])
+        self.assertIsNone(rows[0]["tank_nr"])
         # Sicherung enthält noch das alte Schema (Backup vor Migration)
         backups = glob.glob(os.path.join(self.tmp.name, "backups", "messungen_backup_*.db"))
         self.assertEqual(len(backups), 1)
